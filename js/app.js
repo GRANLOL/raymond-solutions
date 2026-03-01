@@ -28,15 +28,6 @@ const dateContainer = document.getElementById('date-container');
 const timeGrid = document.getElementById('time-grid');
 const phoneInput = document.getElementById('phone-input');
 
-// --- D.2 Modal Elements ---
-const modal = document.getElementById('confirm-modal');
-const modalService = document.getElementById('modal-service');
-const modalDate = document.getElementById('modal-date');
-const modalTime = document.getElementById('modal-time');
-const modalPhone = document.getElementById('modal-phone');
-const modalCancel = document.getElementById('modal-cancel');
-const modalSubmit = document.getElementById('modal-submit');
-
 // --- E. Generation Functions ---
 
 // Custom Dropdown Logic
@@ -148,8 +139,8 @@ function checkConfirmation() {
             tg.MainButton.textColor = config.themeColors.mainButtonTextColor;
             tg.MainButton.show();
 
-            tg.MainButton.offClick(showModal);
-            tg.MainButton.onClick(showModal);
+            tg.MainButton.offClick(submitData);
+            tg.MainButton.onClick(submitData);
         }
     } else {
         if (tg.MainButton) tg.MainButton.hide();
@@ -161,32 +152,11 @@ phoneInput.addEventListener('input', () => {
     checkConfirmation();
 });
 
-function showModal() {
-    tg.HapticFeedback.impactOccurred('light');
-
-    // Populate Modal Info
-    modalService.textContent = selectedService;
-    modalDate.textContent = selectedDate;
-    modalTime.textContent = selectedTime;
-    modalPhone.textContent = phoneInput.value;
-
-    // Show Modal
-    modal.classList.add('active');
-    tg.MainButton.hide(); // Hide the main button when modal is active
-}
-
-function hideModal() {
-    tg.HapticFeedback.impactOccurred('light');
-    modal.classList.remove('active');
-    tg.MainButton.show(); // Bring it back if they cancel
-}
-
 function submitData() {
     tg.HapticFeedback.impactOccurred('medium');
     if (!selectedService || !selectedDate || !selectedTime) return;
 
-    modalSubmit.disabled = true;
-    modalSubmit.textContent = "Загрузка...";
+    tg.MainButton.showProgress();
 
     const data = {
         service: selectedService,
@@ -197,9 +167,6 @@ function submitData() {
 
     tg.sendData(JSON.stringify(data));
 }
-
-modalCancel.addEventListener('click', hideModal);
-modalSubmit.addEventListener('click', submitData);
 
 // --- G. Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
