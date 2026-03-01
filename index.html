@@ -52,12 +52,36 @@
                 <!-- Times will be populated dynamically -->
             </div>
 
-            <!-- 5. Main Action Button -->
+            <!-- 5. Phone Input -->
+            <div class="section-title">Номер телефона</div>
+            <div class="phone-input-wrapper">
+                <input type="tel" id="phone-input" class="phone-input" placeholder="+7 (999) 000-00-00"
+                    autocomplete="tel">
+            </div>
+
+            <!-- 6. Main Action Button -->
             <button id="confirm-btn" class="confirm-btn" disabled>Подтвердить запись</button>
 
-            <!-- 6. Footer -->
+            <!-- 7. Footer -->
             <div class="footer-note">
                 Нажимая "Подтвердить запись", вы соглашаетесь с условиями обработки персональных данных.
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="confirm-modal" aria-hidden="true">
+        <div class="modal-card">
+            <h3 class="modal-title">Подтверждение</h3>
+            <div class="modal-summary">
+                <p>Услуга: <span id="modal-service"></span></p>
+                <p>Дата: <span id="modal-date"></span></p>
+                <p>Время: <span id="modal-time"></span></p>
+                <p>Телефон: <span id="modal-phone"></span></p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn cancel" id="modal-cancel">Отмена</button>
+                <button class="modal-btn submit" id="modal-submit">Записаться</button>
             </div>
         </div>
     </div>
