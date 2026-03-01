@@ -26,7 +26,17 @@ const selectLabel = document.getElementById('select-label');
 const customOptionsContainer = document.getElementById('custom-options');
 const dateContainer = document.getElementById('date-container');
 const timeGrid = document.getElementById('time-grid');
+const phoneInput = document.getElementById('phone-input');
 const confirmBtn = document.getElementById('confirm-btn');
+
+// --- D.2 Modal Elements ---
+const modal = document.getElementById('confirm-modal');
+const modalService = document.getElementById('modal-service');
+const modalDate = document.getElementById('modal-date');
+const modalTime = document.getElementById('modal-time');
+const modalPhone = document.getElementById('modal-phone');
+const modalCancel = document.getElementById('modal-cancel');
+const modalSubmit = document.getElementById('modal-submit');
 
 // --- E. Generation Functions ---
 
@@ -38,6 +48,7 @@ function populateServices() {
         optionDiv.textContent = service;
 
         optionDiv.addEventListener('click', () => {
+            tg.HapticFeedback.impactOccurred('light');
             selectLabel.textContent = service;
             selectTrigger.classList.add('selected');
 
@@ -54,6 +65,7 @@ function populateServices() {
 }
 
 function toggleDropdown() {
+    tg.HapticFeedback.impactOccurred('light');
     selectTrigger.classList.toggle('open');
     customOptionsContainer.classList.toggle('open');
 }
@@ -110,6 +122,7 @@ function generateTimes() {
 
 // --- F. Event Handlers ---
 function selectDate(element, dateStr) {
+    tg.HapticFeedback.impactOccurred('light');
     document.querySelectorAll('.date-card').forEach(el => el.classList.remove('active'));
     element.classList.add('active');
     selectedDate = dateStr;
@@ -117,6 +130,7 @@ function selectDate(element, dateStr) {
 }
 
 function selectTime(element, timeStr) {
+    tg.HapticFeedback.impactOccurred('light');
     document.querySelectorAll('.time-slot').forEach(el => el.classList.remove('active'));
     element.classList.add('active');
     selectedTime = timeStr;
@@ -124,7 +138,11 @@ function selectTime(element, timeStr) {
 }
 
 function checkConfirmation() {
-    if (selectedService && selectedDate && selectedTime) {
+    // Basic phone validation: count digits
+    const digitsOnly = phoneInput.value.replace(/\D/g, '');
+    const isPhoneValid = digitsOnly.length >= 10;
+
+    if (selectedService && selectedDate && selectedTime && isPhoneValid) {
         confirmBtn.disabled = false;
 
         if (tg.MainButton) {
@@ -133,8 +151,8 @@ function checkConfirmation() {
             tg.MainButton.textColor = config.themeColors.mainButtonTextColor;
             tg.MainButton.show();
 
-            tg.MainButton.offClick(submitData);
-            tg.MainButton.onClick(submitData);
+            tg.MainButton.offClick(showModal);
+            tg.MainButton.onClick(showModal);
         }
     } else {
         confirmBtn.disabled = true;
@@ -142,19 +160,51 @@ function checkConfirmation() {
     }
 }
 
+// Phone input validation listener
+phoneInput.addEventListener('input', () => {
+    checkConfirmation();
+});
+
+function showModal() {
+    tg.HapticFeedback.impactOccurred('light');
+
+    // Populate Modal Info
+    modalService.textContent = selectedService;
+    modalDate.textContent = selectedDate;
+    modalTime.textContent = selectedTime;
+    modalPhone.textContent = phoneInput.value;
+
+    // Show Modal
+    modal.classList.add('active');
+    tg.MainButton.hide(); // Hide the main button when modal is active
+}
+
+function hideModal() {
+    tg.HapticFeedback.impactOccurred('light');
+    modal.classList.remove('active');
+    tg.MainButton.show(); // Bring it back if they cancel
+}
+
 function submitData() {
+    tg.HapticFeedback.impactOccurred('medium');
     if (!selectedService || !selectedDate || !selectedTime) return;
+
+    modalSubmit.disabled = true;
+    modalSubmit.textContent = "Загрузка...";
 
     const data = {
         service: selectedService,
         date: selectedDate,
-        time: selectedTime
+        time: selectedTime,
+        phone: phoneInput.value
     };
 
     tg.sendData(JSON.stringify(data));
 }
 
-confirmBtn.addEventListener('click', submitData);
+confirmBtn.addEventListener('click', showModal);
+modalCancel.addEventListener('click', hideModal);
+modalSubmit.addEventListener('click', submitData);
 
 // --- G. Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -162,4 +212,3 @@ document.addEventListener('DOMContentLoaded', () => {
     generateDates();
     generateTimes();
 });
-
