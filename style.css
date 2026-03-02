@@ -55,7 +55,7 @@
     --border-radius-sm: 14px;
     --border-radius: 20px;
     --border-radius-lg: 30px;
-    --transition-smooth: transform 0.15s ease, background-color 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
+    --transition-smooth: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 
@@ -322,7 +322,24 @@ body {
     position: relative;
     overflow: hidden;
     touch-action: manipulation;
-    will-change: transform, box-shadow;
+    will-change: transform, box-shadow, opacity;
+    transform: translateZ(0);
+}
+
+.fade-in {
+    animation: fadeInSmooth 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fadeInSmooth {
+    0% {
+        opacity: 0;
+        transform: translateY(5px) translateZ(0);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) translateZ(0);
+    }
 }
 
 .date-card::after {
@@ -412,7 +429,8 @@ body {
     position: relative;
     overflow: hidden;
     touch-action: manipulation;
-    will-change: transform, box-shadow;
+    will-change: transform, box-shadow, opacity;
+    transform: translateZ(0);
 }
 
 .time-slot::after {
@@ -508,13 +526,17 @@ body {
     align-items: center;
     justify-content: center;
     opacity: 0;
+    pointer-events: none;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity, visibility;
+    transform: translateZ(0);
 }
 
 .modal-overlay.active {
     opacity: 1;
     visibility: visible;
+    pointer-events: auto;
 }
 
 .modal-card {
@@ -526,14 +548,15 @@ body {
     border-radius: var(--border-radius-lg);
     padding: 32px 24px;
     box-shadow: var(--shadow-heavy);
-    transform: translateY(20px) scale(0.95);
-    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: translateY(20px) scale(0.95) translateZ(0);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     text-align: center;
     border: 1px solid var(--glass-border);
+    will-change: transform;
 }
 
 .modal-overlay.active .modal-card {
-    transform: translateY(0) scale(1);
+    transform: translateY(0) scale(1) translateZ(0);
 }
 
 .modal-title {
@@ -626,13 +649,15 @@ body {
     align-items: center;
     justify-content: center;
     opacity: 0;
-    visibility: hidden;
-    transition: opacity 0.4s ease, visibility 0.4s ease;
+    pointer-events: none;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity;
+    transform: translateZ(0);
 }
 
 .success-screen.active {
     opacity: 1;
-    visibility: visible;
+    pointer-events: auto;
 }
 
 .success-card {
@@ -642,14 +667,15 @@ body {
     border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-heavy);
     border: 1px solid var(--glass-border);
-    transform: translateY(20px) scale(0.95);
-    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transform: translateY(20px) scale(0.95) translateZ(0);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
     width: 90%;
     max-width: 360px;
+    will-change: transform;
 }
 
 .success-screen.active .success-card {
-    transform: translateY(0) scale(1);
+    transform: translateY(0) scale(1) translateZ(0);
 }
 
 .success-icon svg {
@@ -664,7 +690,9 @@ body {
     stroke-width: 2;
     stroke-dasharray: 166;
     stroke-dashoffset: 166;
-    transition: stroke-dashoffset 0.6s ease 0.2s;
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: stroke-dashoffset;
+    transform: translateZ(0);
 }
 
 .success-check {
@@ -672,14 +700,16 @@ body {
     stroke-width: 3;
     stroke-dasharray: 48;
     stroke-dashoffset: 48;
-    transition: stroke-dashoffset 0.4s ease 0.6s;
+    transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: stroke-dashoffset;
+    transform: translateZ(0);
 }
 
-.success-screen.active .success-circle {
+.success-screen.animate .success-circle {
     stroke-dashoffset: 0;
 }
 
-.success-screen.active .success-check {
+.success-screen.animate .success-check {
     stroke-dashoffset: 0;
 }
 
