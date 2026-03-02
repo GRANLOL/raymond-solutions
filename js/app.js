@@ -69,6 +69,12 @@ const modalPhone = document.getElementById('modal-phone');
 const modalCancel = document.getElementById('modal-cancel');
 const modalSubmit = document.getElementById('modal-submit');
 
+// Success Screen Elements
+const successScreen = document.getElementById('success-screen');
+const successService = document.getElementById('success-service');
+const successDate = document.getElementById('success-date');
+const successTime = document.getElementById('success-time');
+
 // --- E. Generation Functions ---
 
 // Custom Dropdown Logic
@@ -293,7 +299,21 @@ function submitData() {
         name: nameInput.value.trim()
     };
 
-    tg.sendData(JSON.stringify(data));
+    // Hide Confirmation Modal
+    modal.classList.remove('active');
+
+    // Populate and Show Success Screen
+    successService.textContent = selectedService;
+    successDate.textContent = document.querySelector('.date-card.active .date-num').textContent + ' ' + document.querySelector('.date-card.active .date-month').textContent;
+    successTime.textContent = selectedTime;
+
+    successScreen.classList.add('active');
+    tg.HapticFeedback.notificationOccurred('success');
+
+    // Wait 2.5 seconds, then send data to Telegram
+    setTimeout(() => {
+        tg.sendData(JSON.stringify(data));
+    }, 2500);
 }
 
 // --- G. Initialization ---
