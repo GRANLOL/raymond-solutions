@@ -43,13 +43,26 @@
             <!-- 3. Date Selection -->
             <div class="section-title">Выберите дату</div>
             <div class="date-container" id="date-container">
-                <!-- Dates will be populated dynamically -->
+                <!-- Skeleton Loading Placeholders -->
+                <div class="skeleton skeleton-date"></div>
+                <div class="skeleton skeleton-date"></div>
+                <div class="skeleton skeleton-date"></div>
+                <div class="skeleton skeleton-date"></div>
+                <div class="skeleton skeleton-date"></div>
+                <div class="skeleton skeleton-date"></div>
+                <div class="skeleton skeleton-date"></div>
             </div>
 
             <!-- 4. Time Selection -->
             <div class="section-title">Выберите время</div>
             <div class="time-grid" id="time-grid">
-                <!-- Times will be populated dynamically -->
+                <!-- Skeleton Loading Placeholders -->
+                <div class="skeleton skeleton-time"></div>
+                <div class="skeleton skeleton-time"></div>
+                <div class="skeleton skeleton-time"></div>
+                <div class="skeleton skeleton-time"></div>
+                <div class="skeleton skeleton-time"></div>
+                <div class="skeleton skeleton-time"></div>
             </div>
 
             <!-- 5. Name Input -->
@@ -86,6 +99,24 @@
             <div class="modal-actions">
                 <button class="modal-btn cancel" id="modal-cancel">Отмена</button>
                 <button class="modal-btn submit" id="modal-submit">Записаться</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Screen -->
+    <div class="success-screen" id="success-screen" aria-hidden="true">
+        <div class="success-card">
+            <div class="success-icon">
+                <svg viewBox="0 0 52 52">
+                    <circle class="success-circle" cx="26" cy="26" r="25" fill="none" />
+                    <path class="success-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8" />
+                </svg>
+            </div>
+            <h2 class="success-title">Вы записаны!</h2>
+            <div class="success-summary">
+                <p>Услуга: <span id="success-service"></span></p>
+                <p>Дата: <span id="success-date"></span></p>
+                <p>Время: <span id="success-time"></span></p>
             </div>
         </div>
     </div>
