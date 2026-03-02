@@ -139,7 +139,7 @@ function generateDates() {
         const dFull = `${dNum} ${months[targetDate.getMonth()]}`;
 
         const card = document.createElement('div');
-        card.className = 'date-card';
+        card.className = 'date-card fade-in';
         card.innerHTML = `
             <div class="date-day">${dDay}</div>
             <div class="date-num">${dNum}</div>
@@ -163,7 +163,7 @@ function generateTimes(formattedDate = null) {
 
     config.timeSlots.forEach(time => {
         const slot = document.createElement('div');
-        slot.className = 'time-slot';
+        slot.className = 'time-slot fade-in';
         slot.textContent = time;
 
         if (busyTimes.includes(time)) {
@@ -307,10 +307,18 @@ function submitData() {
     successDate.textContent = document.querySelector('.date-card.active .date-num').textContent + ' ' + document.querySelector('.date-card.active .date-month').textContent;
     successTime.textContent = selectedTime;
 
+    // Step 1: Immediately trigger fade-in
     successScreen.classList.add('active');
     tg.HapticFeedback.notificationOccurred('success');
 
-    // Wait 2.5 seconds, then send data to Telegram
+    // Step 2: requestAnimationFrame to smoothly draw checkmark animation
+    requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+            successScreen.classList.add('animate');
+        });
+    });
+
+    // Step 3: Call tg.sendData after 2.5 seconds
     setTimeout(() => {
         tg.sendData(JSON.stringify(data));
     }, 2500);
