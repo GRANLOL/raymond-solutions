@@ -134,12 +134,13 @@ body {
 }
 
 /* --- Dynamic Header --- */
-.salon-header {
-    background-color: var(--glass-bg-header);
-    backdrop-filter: var(--blur-header);
-    -webkit-backdrop-filter: var(--blur-header);
-    padding: var(--padding-header);
-    margin: var(--margin-header);
+.header-container {
+    padding: 16px 20px;
+    background-color: rgba(250, 246, 245, 0.95);
+    border-bottom: 1px solid var(--glass-border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -147,9 +148,6 @@ body {
     min-height: 80px;
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-heavy), var(--shadow-inset-header);
-    border: 1px solid var(--glass-border);
-    position: relative;
-    z-index: 10;
 }
 
 .salon-logo-placeholder {
@@ -317,15 +315,16 @@ body {
     text-align: center;
     cursor: pointer;
     transition: var(--transition-smooth);
-    box-shadow: var(--shadow-medium);
+    box-shadow: none;
     display: flex;
     flex-direction: column;
     align-items: center;
     position: relative;
     overflow: hidden;
     touch-action: manipulation;
-    will-change: transform, box-shadow, opacity;
+    will-change: transform, opacity;
     transform: translateZ(0);
+    contain: strict;
 }
 
 .fade-in {
@@ -369,7 +368,7 @@ body {
     color: var(--selected-text);
     border-color: var(--selected-bg);
     transform: translateY(-8px) scale(1.02);
-    box-shadow: var(--shadow-active-item);
+    box-shadow: var(--shadow-light);
 }
 
 .date-card.date-full {
@@ -427,12 +426,13 @@ body {
     font-weight: 600;
     cursor: pointer;
     transition: var(--transition-smooth);
-    box-shadow: var(--shadow-medium);
+    box-shadow: none;
     position: relative;
     overflow: hidden;
     touch-action: manipulation;
-    will-change: transform, box-shadow, opacity;
+    will-change: transform, opacity;
     transform: translateZ(0);
+    contain: strict;
 }
 
 .time-slot::after {
@@ -460,7 +460,7 @@ body {
     color: var(--selected-text);
     border-color: var(--selected-bg);
     transform: scale(1.06) translateY(-3px);
-    box-shadow: var(--shadow-active-item);
+    box-shadow: var(--shadow-light);
 }
 
 .time-slot.slot-busy {
@@ -520,9 +520,7 @@ body {
 .modal-overlay {
     position: fixed;
     inset: 0;
-    background-color: rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background-color: rgba(0, 0, 0, 0.4);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -542,9 +540,7 @@ body {
 }
 
 .modal-card {
-    background-color: rgba(255, 255, 255, 0.85);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    background-color: rgba(255, 255, 255, 0.98);
     width: 90%;
     max-width: 360px;
     border-radius: var(--border-radius-lg);
@@ -639,13 +635,10 @@ body {
     padding: 0 10px;
 }
 
-/* --- Success Screen --- */
 .success-screen {
     position: fixed;
     inset: 0;
-    background-color: rgba(250, 246, 245, 0.95);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
+    background-color: rgba(250, 246, 245, 0.98);
     z-index: 2000;
     display: flex;
     align-items: center;
@@ -694,7 +687,7 @@ body {
     stroke-dashoffset: 166;
     transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: stroke-dashoffset;
-    transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
 }
 
 .success-check {
@@ -704,7 +697,7 @@ body {
     stroke-dashoffset: 48;
     transition: stroke-dashoffset 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     will-change: stroke-dashoffset;
-    transform: translateZ(0);
+    transform: translate3d(0, 0, 0);
 }
 
 .success-screen.animate .success-circle {
