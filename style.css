@@ -218,9 +218,12 @@ body {
 }
 
 .custom-select-wrapper.open {
-    /* When open, wrapper stays a pill but gets a heavier shadow and accent border */
     border-color: var(--accent-color);
     box-shadow: var(--shadow-heavy);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: transparent;
+    /* Seamless blend into the list below */
 }
 
 .custom-select-trigger {
@@ -261,12 +264,15 @@ body {
 .custom-options {
     position: absolute;
     top: 100%;
-    left: 0;
-    right: 0;
-    width: 100%;
+    left: -1px;
+    /* Align perfectly expanding past wrapper borders */
+    right: -1px;
+    width: calc(100% + 2px);
     background-color: var(--card-bg);
     border-radius: 0 0 var(--border-radius) var(--border-radius);
-    border-top: 1px solid var(--glass-border-logo);
+    border: 1px solid var(--accent-color);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    /* Very faint internal divider */
     opacity: 0;
     visibility: hidden;
     transform-origin: top;
