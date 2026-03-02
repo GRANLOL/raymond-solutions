@@ -303,8 +303,9 @@ function submitData() {
     };
 
     setTimeout(() => {
-        // Hide Confirmation Modal
+        // Hide Confirmation Modal and Telegram Main Button
         modal.classList.remove('active');
+        tg.MainButton.hide();
 
         // Populate and Show Success Screen
         successService.textContent = selectedService;
