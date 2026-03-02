@@ -24,11 +24,26 @@ const days = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
 // --- API ---
 async function fetchBusySlots() {
     try {
-        const response = await fetch('https://miki-suffruticose-restrainedly.ngrok-free.dev/api/busy-slots');
-        if (response.ok) {
-            busySlots = await response.json();
+        const response = await fetch('https://miki-suffruticose-restrainedly.ngrok-free.dev/api/busy-slots', {
+            headers: {
+                'ngrok-skip-browser-warning': 'true',
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            console.error("Server API Error. Status:", response.status);
+            console.log("Raw Response Text:", await response.text());
+            throw new Error('Server returned ' + response.status);
+        }
+
+        const data = await response.json();
+
+        // Validate it's a dictionary
+        if (typeof data === 'object' && data !== null) {
+            busySlots = data;
         } else {
-            console.error("Failed to fetch busy slots:", response.status);
+            console.warn("Expected dictionary, got:", data);
         }
     } catch (e) {
         console.error("Error fetching busy slots:", e);
