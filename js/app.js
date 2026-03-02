@@ -112,11 +112,14 @@ function closeDropdown() {
     customOptionsContainer.classList.remove('open');
 }
 
-document.addEventListener('click', (e) => {
+const closeDropdownListener = (e) => {
     if (!document.getElementById('service-wrapper').contains(e.target)) {
         closeDropdown();
     }
-});
+};
+
+document.addEventListener('click', closeDropdownListener, { passive: true });
+document.addEventListener('touchstart', closeDropdownListener, { passive: true });
 
 selectTrigger.addEventListener('click', toggleDropdown);
 
