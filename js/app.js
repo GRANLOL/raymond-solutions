@@ -15,10 +15,25 @@ tg.setBackgroundColor(config.themeColors.backgroundColor);
 let selectedService = null;
 let selectedDate = null;
 let selectedTime = null;
+let busySlots = {};
 
 const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
 const shortMonths = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
 const days = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
+
+// --- API ---
+async function fetchBusySlots() {
+    try {
+        const response = await fetch('https://miki-suffruticose-restrainedly.ngrok-free.dev/api/busy-slots');
+        if (response.ok) {
+            busySlots = await response.json();
+        } else {
+            console.error("Failed to fetch busy slots:", response.status);
+        }
+    } catch (e) {
+        console.error("Error fetching busy slots:", e);
+    }
+}
 
 // --- D. DOM Elements ---
 const selectTrigger = document.getElementById('select-trigger');
@@ -86,6 +101,7 @@ selectTrigger.addEventListener('click', toggleDropdown);
 
 // Generate Dates
 function generateDates() {
+    dateContainer.innerHTML = '';
     const today = new Date();
     for (let i = 0; i < 7; i++) {
         const targetDate = new Date();
@@ -94,6 +110,11 @@ function generateDates() {
         const dDay = days[targetDate.getDay()];
         const dMonth = shortMonths[targetDate.getMonth()];
         const dNum = targetDate.getDate();
+
+        const m = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+        const d = dNum.toString().padStart(2, '0');
+        const formattedDate = `${d}.${m}`;
+
         const dFull = `${dNum} ${months[targetDate.getMonth()]}`;
 
         const card = document.createElement('div');
@@ -104,29 +125,44 @@ function generateDates() {
             <div class="date-month">${dMonth}</div>
         `;
 
-        card.onclick = () => selectDate(card, dFull);
+        if (busySlots[formattedDate] && busySlots[formattedDate].length >= config.timeSlots.length) {
+            card.classList.add('date-full');
+        } else {
+            card.onclick = () => selectDate(card, dFull, formattedDate);
+        }
+
         dateContainer.appendChild(card);
     }
 }
 
 // Generate Times
-function generateTimes() {
+function generateTimes(formattedDate = null) {
+    timeGrid.innerHTML = '';
+    const busyTimes = formattedDate && busySlots[formattedDate] ? busySlots[formattedDate] : [];
+
     config.timeSlots.forEach(time => {
         const slot = document.createElement('div');
         slot.className = 'time-slot';
         slot.textContent = time;
 
-        slot.onclick = () => selectTime(slot, time);
+        if (busyTimes.includes(time)) {
+            slot.classList.add('slot-busy');
+        } else {
+            slot.onclick = () => selectTime(slot, time);
+        }
+
         timeGrid.appendChild(slot);
     });
 }
 
 // --- F. Event Handlers ---
-function selectDate(element, dateStr) {
+function selectDate(element, dFull, formattedDate) {
     tg.HapticFeedback.impactOccurred('light');
     document.querySelectorAll('.date-card').forEach(el => el.classList.remove('active'));
     element.classList.add('active');
-    selectedDate = dateStr;
+    selectedDate = formattedDate; // use the DB format to submit
+    selectedTime = null; // reset time selection
+    generateTimes(formattedDate);
     checkConfirmation();
 }
 
@@ -246,12 +282,13 @@ function submitData() {
 }
 
 // --- G. Initialization ---
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     // Pre-fill user name from Telegram WebApp Context
     if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
         nameInput.value = tg.initDataUnsafe.user.first_name || '';
     }
 
+    await fetchBusySlots();
     populateServices();
     generateDates();
     generateTimes();
