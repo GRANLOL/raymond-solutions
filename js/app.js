@@ -262,16 +262,19 @@ phoneInput.addEventListener('input', (e) => {
 function showModal() {
     tg.HapticFeedback.impactOccurred('medium');
 
-    // Populate Modal Info
-    modalService.textContent = selectedService;
-    modalDate.textContent = selectedDate;
-    modalTime.textContent = selectedTime;
-    modalName.textContent = nameInput.value.trim();
-    modalPhone.textContent = phoneInput.value;
+    // Async execution to let Telegram MainButton press animation finish before rendering
+    setTimeout(() => {
+        // Populate Modal Info
+        modalService.textContent = selectedService;
+        modalDate.textContent = selectedDate;
+        modalTime.textContent = selectedTime;
+        modalName.textContent = nameInput.value.trim();
+        modalPhone.textContent = phoneInput.value;
 
-    // Show Modal
-    modal.classList.add('active');
-    tg.MainButton.hide();
+        // Show Modal
+        modal.classList.add('active');
+        tg.MainButton.hide();
+    }, 0);
 }
 
 function hideModal() {
@@ -299,33 +302,39 @@ function submitData() {
         name: nameInput.value.trim()
     };
 
-    // Hide Confirmation Modal
-    modal.classList.remove('active');
-
-    // Populate and Show Success Screen
-    successService.textContent = selectedService;
-    successDate.textContent = document.querySelector('.date-card.active .date-num').textContent + ' ' + document.querySelector('.date-card.active .date-month').textContent;
-    successTime.textContent = selectedTime;
-
-    // Step 1: Immediately trigger fade-in
-    successScreen.classList.add('active');
-    tg.HapticFeedback.notificationOccurred('success');
-
-    // Step 2: requestAnimationFrame to smoothly draw checkmark animation
-    requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-            successScreen.classList.add('animate');
-        });
-    });
-
-    // Step 3: Call tg.sendData after 2.5 seconds
     setTimeout(() => {
-        tg.sendData(JSON.stringify(data));
-    }, 2500);
+        // Hide Confirmation Modal
+        modal.classList.remove('active');
+
+        // Populate and Show Success Screen
+        successService.textContent = selectedService;
+        successDate.textContent = document.querySelector('.date-card.active .date-num').textContent + ' ' + document.querySelector('.date-card.active .date-month').textContent;
+        successTime.textContent = selectedTime;
+
+        // Step 1: Immediately trigger fade-in
+        successScreen.classList.add('active');
+        tg.HapticFeedback.notificationOccurred('success');
+
+        // Step 2: requestAnimationFrame to smoothly draw checkmark animation
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                successScreen.classList.add('animate');
+            });
+        });
+
+        // Step 3: Call tg.sendData after 2.5 seconds
+        setTimeout(() => {
+            tg.sendData(JSON.stringify(data));
+        }, 2500);
+    }, 0);
 }
 
 // --- G. Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
+    // Implement Passive Event Listeners for touch events to prevent scroll-blocking
+    document.addEventListener('touchstart', function () { }, { passive: true });
+    document.addEventListener('touchmove', function () { }, { passive: true });
+
     // Pre-fill user name from Telegram WebApp Context
     if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
         nameInput.value = tg.initDataUnsafe.user.first_name || '';
