@@ -19,6 +19,10 @@ let busySlots = {};
 let dynamicServices = [];
 let dynamicCategories = [];
 let dynamicTimeSlots = [];
+let dynamicMasters = [];
+let useMasters = false;
+let selectedMaster = null;
+
 let dynamicBookingWindow = 7;
 let workingDays = [1, 2, 3, 4, 5, 6, 0];
 let blacklistedDates = [];
@@ -72,6 +76,12 @@ async function fetchContent() {
             if (data.categories) {
                 dynamicCategories = data.categories;
             }
+            if (data.masters) {
+                dynamicMasters = data.masters;
+            }
+            if (data.use_masters !== undefined) {
+                useMasters = data.use_masters;
+            }
             dynamicTimeSlots = data.time_slots.map(ts => ts.time_value);
             if (data.booking_window) {
                 dynamicBookingWindow = data.booking_window;
@@ -91,6 +101,8 @@ async function fetchContent() {
         dynamicBookingWindow = 7;
         workingDays = [1, 2, 3, 4, 5, 6, 0];
         blacklistedDates = [];
+        dynamicMasters = [];
+        useMasters = false;
     }
 }
 
@@ -160,12 +172,35 @@ function selectCategory(categoryId, activeElement) {
 }
 
 // Custom Dropdown Logic
-function populateServices(categoryId = null) {
-    customOptionsContainer.innerHTML = ''; // Clear skeleton before re-rendering
+function populateServices(categoryId = null, searchQuery = '') {
+    customOptionsContainer.innerHTML = '';
+
+    // Re-inject search input
+    const searchDiv = document.createElement('div');
+    searchDiv.className = 'search-container';
+    searchDiv.innerHTML = `<input type="text" id="search-input" class="search-input" placeholder="Поиск услуг..." autocomplete="off" value="${searchQuery}">`;
+    customOptionsContainer.appendChild(searchDiv);
+
+    const searchInput = document.getElementById('search-input');
+    // Prevent closing when typing
+    searchDiv.addEventListener('click', (e) => e.stopPropagation());
+    searchInput.addEventListener('input', (e) => {
+        populateServices(categoryId, e.target.value);
+        // keep focus
+        const newSearchInput = document.getElementById('search-input');
+        newSearchInput.focus();
+        // position cursor at end
+        newSearchInput.setSelectionRange(e.target.value.length, e.target.value.length);
+    });
 
     let filteredServices = dynamicServices;
     if (categoryId !== null) {
         filteredServices = dynamicServices.filter(s => s.category_id === categoryId);
+    }
+
+    if (searchQuery.trim().length > 0) {
+        const query = searchQuery.toLowerCase();
+        filteredServices = filteredServices.filter(s => s.name.toLowerCase().includes(query) || s.price.toLowerCase().includes(query));
     }
 
     if (filteredServices.length === 0) {
@@ -191,6 +226,25 @@ function populateServices(categoryId = null) {
 
             closeDropdown();
             selectedService = serviceObj.name;
+            selectedMaster = null; // reset master if service changed
+
+            if (useMasters && dynamicMasters.length > 0) {
+                document.getElementById('master-container').style.display = 'block';
+                populateMasters();
+                // hide date / time until master is picked
+                document.getElementById('date-container').style.display = 'none';
+                document.getElementById('time-grid').style.display = 'none';
+                document.querySelectorAll('.section-title')[2].style.display = 'none'; // date title
+                document.querySelectorAll('.section-title')[3].style.display = 'none'; // time title
+            } else {
+                document.getElementById('master-container').style.display = 'none';
+                // ensure date / time is visible
+                document.getElementById('date-container').style.display = 'flex';
+                document.getElementById('time-grid').style.display = 'grid';
+                document.querySelectorAll('.section-title')[2].style.display = 'block';
+                document.querySelectorAll('.section-title')[3].style.display = 'block';
+            }
+
             checkConfirmation();
         }, { passive: true });
 
@@ -209,6 +263,41 @@ function closeDropdown() {
     selectTrigger.classList.remove('open');
     customOptionsContainer.classList.remove('open');
     document.getElementById('service-wrapper').classList.remove('open');
+    const searchInput = document.getElementById('search-input');
+    if (searchInput) searchInput.blur();
+}
+
+function populateMasters() {
+    const masterGrid = document.getElementById('master-grid');
+    masterGrid.innerHTML = '';
+
+    dynamicMasters.forEach(masterObj => {
+        const mDiv = document.createElement('div');
+        mDiv.className = 'master-card';
+        // We'd use a real avatar or fallback to a default icon
+        mDiv.innerHTML = `
+            <div class="master-avatar">👤</div>
+            <div class="master-name">${masterObj.name}</div>
+        `;
+
+        mDiv.addEventListener('click', () => {
+            tg.HapticFeedback.impactOccurred('light');
+            document.querySelectorAll('.master-card').forEach(el => el.classList.remove('selected'));
+            mDiv.classList.add('selected');
+            selectedMaster = masterObj;
+
+            // show date / time
+            document.getElementById('date-container').style.display = 'flex';
+            document.getElementById('time-grid').style.display = 'grid';
+            document.querySelectorAll('.section-title')[2].style.display = 'block';
+            document.querySelectorAll('.section-title')[3].style.display = 'block';
+
+            // Re-render dates just in case we want to filter slots by master in future
+            checkConfirmation();
+        }, { passive: true });
+
+        masterGrid.appendChild(mDiv);
+    });
 }
 
 const closeDropdownListener = (e) => {
@@ -323,7 +412,9 @@ function checkConfirmation() {
     const isPhoneValid = digitsOnly.length >= 11; // 7 + 10 digits
     const isNameValid = nameInput.value.trim().length > 0;
 
-    if (selectedService && selectedDate && selectedTime && isPhoneValid && isNameValid) {
+    const isMasterValid = useMasters ? (selectedMaster !== null) : true;
+
+    if (selectedService && isMasterValid && selectedDate && selectedTime && isPhoneValid && isNameValid) {
         if (tg.MainButton) {
             tg.MainButton.text = "ПОДТВЕРДИТЬ ЗАПИСЬ";
             tg.MainButton.color = config.themeColors.mainButtonColor;
@@ -389,6 +480,14 @@ function showModal() {
     setTimeout(() => {
         // Populate Modal Info
         modalService.textContent = selectedService;
+        const mr = document.getElementById('modal-master-row');
+        if (useMasters && selectedMaster) {
+            document.getElementById('modal-master').textContent = selectedMaster.name;
+            mr.style.display = 'block';
+        } else {
+            mr.style.display = 'none';
+        }
+
         modalDate.textContent = selectedDate;
         modalTime.textContent = selectedTime;
         modalName.textContent = nameInput.value.trim();
@@ -424,6 +523,10 @@ function submitData() {
         phone: phoneInput.value,
         name: nameInput.value.trim()
     };
+
+    if (useMasters && selectedMaster) {
+        data.master_id = selectedMaster.id;
+    }
 
     setTimeout(() => {
         // Hide Confirmation Modal and Telegram Main Button
