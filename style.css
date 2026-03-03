@@ -335,6 +335,44 @@ body {
     font-weight: 600;
 }
 
+/* --- Category Tabs (Horizontal Scroll) --- */
+.category-tabs-container {
+    display: none;
+    /* Handled by JS */
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 6px;
+    margin-bottom: 12px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+}
+
+.category-tabs-container::-webkit-scrollbar {
+    display: none;
+}
+
+.category-chip {
+    flex-shrink: 0;
+    padding: 8px 16px;
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius-sm);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    box-shadow: var(--shadow-light);
+    cursor: pointer;
+    transition: var(--transition-smooth);
+    border: 1px solid transparent;
+}
+
+.category-chip.active {
+    background-color: var(--accent-light, var(--accent-color));
+    color: white;
+    box-shadow: var(--shadow-medium);
+}
+
 /* --- Date Container (Dynamic Horizontal Scroll) --- */
 .date-container {
     display: flex;
