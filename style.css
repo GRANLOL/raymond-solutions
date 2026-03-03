@@ -577,7 +577,7 @@ body {
     opacity: 0;
     pointer-events: none;
     visibility: hidden;
-    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s;
     will-change: opacity, visibility;
     transform: translateZ(0);
 }
@@ -698,13 +698,15 @@ body {
     justify-content: center;
     opacity: 0;
     pointer-events: none;
-    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: opacity;
+    visibility: hidden;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.5s;
+    will-change: opacity, visibility;
     transform: translateZ(0);
 }
 
 .success-screen.active {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
 }
 
