@@ -19,6 +19,8 @@ let busySlots = {};
 let dynamicServices = [];
 let dynamicTimeSlots = [];
 let dynamicBookingWindow = 7;
+let workingDays = [1, 2, 3, 4, 5, 6, 0];
+let blacklistedDates = [];
 
 const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
 const shortMonths = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
@@ -70,6 +72,12 @@ async function fetchContent() {
             if (data.booking_window) {
                 dynamicBookingWindow = data.booking_window;
             }
+            if (data.working_days) {
+                workingDays = data.working_days;
+            }
+            if (data.blacklisted_dates) {
+                blacklistedDates = data.blacklisted_dates;
+            }
         }
     } catch (e) {
         console.error("Error fetching available content:", e);
@@ -77,6 +85,8 @@ async function fetchContent() {
         dynamicServices = config.services;
         dynamicTimeSlots = config.timeSlots;
         dynamicBookingWindow = 7;
+        workingDays = [1, 2, 3, 4, 5, 6, 0];
+        blacklistedDates = [];
     }
 }
 
@@ -181,22 +191,35 @@ function generateDates() {
 
         const m = (targetDate.getMonth() + 1).toString().padStart(2, '0');
         const d = dNum.toString().padStart(2, '0');
-        const formattedDate = `${d}.${m}`;
+        const formattedDate = `${d}.${m}.${targetDate.getFullYear()}`;
+        // Blacklisted dates are in DD.MM.YYYY format
 
         const dFull = `${dNum} ${months[targetDate.getMonth()]}`;
 
+        const targetDay = targetDate.getDay();
+        const isOffDay = !workingDays.includes(targetDay) || blacklistedDates.includes(formattedDate);
+
         const card = document.createElement('div');
         card.className = 'date-card fade-in';
-        card.innerHTML = `
-            <div class="date-day">${dDay}</div>
-            <div class="date-num">${dNum}</div>
-            <div class="date-month">${dMonth}</div>
-        `;
 
-        if (busySlots[formattedDate] && busySlots[formattedDate].length >= dynamicTimeSlots.length) {
-            card.classList.add('date-full');
+        if (isOffDay) {
+            card.classList.add('date-off');
+            card.innerHTML = `
+                <div class="date-day">${dDay}</div>
+                <div class="date-month" style="font-size: 11px; font-weight: 500; margin-top: 6px;">Выходной</div>
+            `;
         } else {
-            card.onclick = () => selectDate(card, dFull, formattedDate);
+            card.innerHTML = `
+                <div class="date-day">${dDay}</div>
+                <div class="date-num">${dNum}</div>
+                <div class="date-month">${dMonth}</div>
+            `;
+
+            if (busySlots[formattedDate] && busySlots[formattedDate].length >= dynamicTimeSlots.length) {
+                card.classList.add('date-full');
+            } else {
+                card.onclick = () => selectDate(card, dFull, formattedDate);
+            }
         }
 
         dateContainer.appendChild(card);
