@@ -40,8 +40,21 @@
                     <span id="select-label">Выберите услугу...</span>
                     <span class="arrow">▼</span>
                 </div>
+                <!-- Inline search input inside the options container -->
                 <div class="custom-options" id="custom-options">
+                    <div class="search-container">
+                        <input type="text" id="search-input" class="search-input" placeholder="Поиск услуг..."
+                            autocomplete="off">
+                    </div>
                     <!-- Options injected by JS -->
+                </div>
+            </div>
+
+            <!-- 2.5 Master Selection (Dynamic) -->
+            <div id="master-container" style="display: none;">
+                <div class="section-title">Выберите мастера</div>
+                <div class="master-grid" id="master-grid">
+                    <!-- Masters injected by JS -->
                 </div>
             </div>
 
@@ -96,6 +109,7 @@
             <h3 class="modal-title">Подтверждение</h3>
             <div class="modal-summary">
                 <p>Услуга: <span id="modal-service"></span></p>
+                <p id="modal-master-row" style="display: none;">Мастер: <span id="modal-master"></span></p>
                 <p>Дата: <span id="modal-date"></span></p>
                 <p>Время: <span id="modal-time"></span></p>
                 <p>Имя: <span id="modal-name"></span></p>
