@@ -204,7 +204,10 @@ function populateServices(categoryId = null, searchQuery = '') {
     }
 
     if (filteredServices.length === 0) {
-        customOptionsContainer.innerHTML = '<div class="custom-option"><span class="service-name" style="color:#909090;">Нет услуг в этой категории</span></div>';
+        const notFoundDiv = document.createElement('div');
+        notFoundDiv.className = 'custom-option';
+        notFoundDiv.innerHTML = '<span class="service-name" style="color:#909090;">Нет услуг по вашему запросу</span>';
+        customOptionsContainer.appendChild(notFoundDiv);
         return;
     }
 
