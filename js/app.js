@@ -18,6 +18,7 @@ let selectedTime = null;
 let busySlots = {};
 let dynamicServices = [];
 let dynamicTimeSlots = [];
+let dynamicBookingWindow = 7;
 
 const months = ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"];
 const shortMonths = ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"];
@@ -66,12 +67,16 @@ async function fetchContent() {
         if (data.services && data.time_slots) {
             dynamicServices = data.services;
             dynamicTimeSlots = data.time_slots.map(ts => ts.time_value);
+            if (data.booking_window) {
+                dynamicBookingWindow = data.booking_window;
+            }
         }
     } catch (e) {
         console.error("Error fetching available content:", e);
         // Fallbacks back to config if API fails completely to ensure app still loads somewhat
         dynamicServices = config.services;
         dynamicTimeSlots = config.timeSlots;
+        dynamicBookingWindow = 7;
     }
 }
 
@@ -158,9 +163,17 @@ selectTrigger.addEventListener('click', toggleDropdown);
 function generateDates() {
     dateContainer.innerHTML = '';
     const today = new Date();
-    for (let i = 0; i < 7; i++) {
+
+    let currentMonthHeader = -1;
+
+    for (let i = 0; i < dynamicBookingWindow; i++) {
         const targetDate = new Date();
         targetDate.setDate(today.getDate() + i);
+
+        // Check if we need a new month header (only if crossing over months in view)
+        // Simplified approach: just rely on the card's month indicator if it's compact.
+        // If user explicitly asked for a month header over the dates, we can add it, but it disrupts flex.
+        // We will just make sure date cards show the month correctly.
 
         const dDay = days[targetDate.getDay()];
         const dMonth = shortMonths[targetDate.getMonth()];
