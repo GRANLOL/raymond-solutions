@@ -227,12 +227,18 @@ function populateServices(searchQuery = '') {
         const body = document.createElement('div');
         body.className = isRoot ? 'cat-body' : 'subcat-body';
 
+        // Inner wrapper required for smooth grid-rows animation
+        const inner = document.createElement('div');
+        inner.className = 'body-inner';
+
         subCats.forEach(sub => {
             const subNode = renderCategoryNode(sub, false);
-            if (subNode) body.appendChild(subNode);
+            if (subNode) inner.appendChild(subNode);
         });
 
-        dirServices.forEach(s => body.appendChild(createServiceOption(s)));
+        dirServices.forEach(s => inner.appendChild(createServiceOption(s)));
+
+        body.appendChild(inner);
 
         header.addEventListener('click', (e) => {
             if (!isRoot) e.stopPropagation();
