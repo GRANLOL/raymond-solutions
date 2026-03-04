@@ -323,15 +323,15 @@ body {
 }
 
 .custom-option {
-    padding: var(--padding-option);
-    font-size: 15px;
+    padding: 13px 18px;
+    font-size: 14px;
     color: var(--text-color);
     cursor: pointer;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    /* Very faint solid divider replacing blur/shadow */
 }
 
 .custom-option:last-child {
@@ -339,13 +339,19 @@ body {
 }
 
 .service-name {
+    font-size: 14px;
     font-weight: 500;
+    line-height: 1.35;
+    flex: 1;
+    min-width: 0;
 }
 
 .service-price {
+    font-size: 13px;
     font-weight: 600;
     color: var(--accent-color);
-    font-size: 14px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .custom-option:active {
@@ -354,7 +360,6 @@ body {
 
 .custom-option.selected {
     background-color: var(--glass-borer-logo);
-    /* Using an existing transparent var approximation */
     color: var(--accent-hover);
     font-weight: 600;
 }
@@ -458,25 +463,24 @@ body {
     transform: rotate(90deg);
 }
 
-/* --- Collapsible Bodies --- */
+/* --- Collapsible Bodies (grid-rows trick for smooth animation) --- */
 .cat-body,
 .subcat-body {
-    max-height: 0;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: grid-template-rows;
+}
+
+.cat-body>*,
+.subcat-body>* {
     overflow: hidden;
-    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: max-height;
-    transform: translateZ(0);
-    backface-visibility: hidden;
+    min-height: 0;
 }
 
-.cat-group.open>.cat-body {
-    max-height: 4000px;
-    padding-bottom: 4px;
-}
-
+.cat-group.open>.cat-body,
 .subcat-group.open>.subcat-body {
-    max-height: 4000px;
-    padding-bottom: 4px;
+    grid-template-rows: 1fr;
 }
 
 /* --- Service Items Inside Tree --- */
@@ -497,10 +501,11 @@ body {
 /* Service dot marker */
 .service-dot {
     color: var(--accent-color);
-    font-size: 10px;
-    margin-right: 8px;
+    font-size: 7px;
+    margin-right: 6px;
     flex-shrink: 0;
-    opacity: 0.7;
+    opacity: 0.45;
+    line-height: 1;
 }
 
 /* --- Deeper Nesting Visual Hints --- */
