@@ -458,39 +458,35 @@ body {
     transform: rotate(90deg);
 }
 
-/* --- Collapsible Bodies --- */
+/* --- Collapsible Bodies (grid animation — lag-free on all browsers) --- */
 .cat-body,
 .subcat-body {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.35s cubic-bezier(0.4, 0, 0.2, 1);
-    will-change: max-height;
-    transform: translateZ(0);
-    backface-visibility: hidden;
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.cat-group.open>.cat-body {
-    max-height: 4000px;
-    padding-bottom: 4px;
-}
-
+.cat-group.open>.cat-body,
 .subcat-group.open>.subcat-body {
-    max-height: 4000px;
-    padding-bottom: 4px;
+    grid-template-rows: 1fr;
+}
+
+/* Inner wrapper — required for grid animation, clips the overflow */
+.body-inner {
+    overflow: hidden;
+    min-height: 0;
 }
 
 /* --- Service Items Inside Tree --- */
-.cat-body>.custom-option {
+.cat-body>.body-inner>.custom-option {
     padding-left: 28px;
     border-left: 2px solid rgba(226, 182, 179, 0.3);
-    margin-left: 8px;
     background-color: rgba(255, 255, 255, 0.6);
 }
 
-.subcat-body>.custom-option {
+.subcat-body>.body-inner>.custom-option {
     padding-left: 22px;
     border-left: 2px solid rgba(226, 182, 179, 0.2);
-    margin-left: 4px;
     background-color: rgba(255, 255, 255, 0.5);
 }
 
