@@ -142,6 +142,7 @@ function createServiceOption(serviceObj) {
     const optionDiv = document.createElement('div');
     optionDiv.className = 'custom-option';
     optionDiv.innerHTML = `
+        <span class="service-dot">●</span>
         <span class="service-name">${serviceObj.name}</span>
         <span class="service-price">${serviceObj.price}</span>
     `;
@@ -332,14 +333,52 @@ function populateMasters() {
     });
 }
 
-const closeDropdownListener = (e) => {
+// Scroll-aware close: distinguish taps from scrolls
+let _touchStartY = 0;
+let _touchStartX = 0;
+const _SCROLL_THRESHOLD = 15; // px of movement to consider a scroll
+
+// Scroll cooldown: track last scroll time inside dropdown to prevent
+// accidental close when finger slips outside while scrolling
+let _lastDropdownScrollTime = 0;
+const _SCROLL_COOLDOWN = 400; // ms after last scroll to ignore outside taps
+
+customOptionsContainer.addEventListener('scroll', () => {
+    _lastDropdownScrollTime = Date.now();
+}, { passive: true });
+
+// Also track touchmove inside the dropdown as scroll indicator
+customOptionsContainer.addEventListener('touchmove', () => {
+    _lastDropdownScrollTime = Date.now();
+}, { passive: true });
+
+document.addEventListener('touchstart', (e) => {
+    _touchStartY = e.touches[0].clientY;
+    _touchStartX = e.touches[0].clientX;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+    const touch = e.changedTouches[0];
+    const dy = Math.abs(touch.clientY - _touchStartY);
+    const dx = Math.abs(touch.clientX - _touchStartX);
+    // If the finger moved significantly, it was a scroll — don't close
+    if (dy > _SCROLL_THRESHOLD || dx > _SCROLL_THRESHOLD) return;
+    // If user was scrolling inside dropdown recently, don't close
+    if (Date.now() - _lastDropdownScrollTime < _SCROLL_COOLDOWN) return;
+    // It was a tap — close if outside the wrapper
     if (!document.getElementById('service-wrapper').contains(e.target)) {
         closeDropdown();
     }
-};
+}, { passive: true });
 
-document.addEventListener('click', closeDropdownListener, { passive: true });
-document.addEventListener('touchstart', closeDropdownListener, { passive: true });
+// Desktop: close only on real clicks outside
+document.addEventListener('click', (e) => {
+    // Skip if this was triggered by a touch (mobile fires both)
+    if (e.sourceCapabilities && e.sourceCapabilities.firesTouchEvents) return;
+    if (!document.getElementById('service-wrapper').contains(e.target)) {
+        closeDropdown();
+    }
+}, { passive: true });
 
 selectTrigger.addEventListener('click', toggleDropdown);
 
