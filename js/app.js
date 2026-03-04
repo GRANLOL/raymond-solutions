@@ -202,77 +202,51 @@ function populateServices(searchQuery = '') {
     const topCategories = dynamicCategories.filter(c => c.parent_id === null || c.parent_id === undefined);
     const hasCategories = topCategories.length > 0;
 
-    topCategories.forEach(topCat => {
-        const subCategories = dynamicCategories.filter(c => c.parent_id === topCat.id);
-        const directServices = dynamicServices.filter(s => s.category_id === topCat.id);
+    function renderCategoryNode(cat, isRoot) {
+        const subCats = dynamicCategories.filter(c => c.parent_id === cat.id);
+        const dirServices = dynamicServices.filter(s => s.category_id === cat.id);
 
-        // Skip empty categories (no subcats, no services)
-        if (subCategories.length === 0 && directServices.length === 0) return;
+        if (subCats.length === 0 && dirServices.length === 0) return null;
 
-        // Create category group
-        const catGroup = document.createElement('div');
-        catGroup.className = 'cat-group';
+        const group = document.createElement('div');
+        group.className = isRoot ? 'cat-group' : 'subcat-group';
 
-        // Category header
-        const catHeader = document.createElement('div');
-        catHeader.className = 'cat-header';
-        const hasChildren = subCategories.length > 0 || directServices.length > 0;
-        catHeader.innerHTML = `
-            <span class="cat-name">${topCat.name}</span>
-            ${hasChildren ? '<span class="cat-arrow">›</span>' : ''}
+        const header = document.createElement('div');
+        header.className = isRoot ? 'cat-header' : 'subcat-header';
+
+        const titleClass = isRoot ? 'cat-name' : 'subcat-name';
+        const arrowClass = isRoot ? 'cat-arrow' : 'subcat-arrow';
+        const hasChildren = subCats.length > 0 || dirServices.length > 0;
+
+        header.innerHTML = `
+            <span class="${titleClass}">${cat.name}</span>
+            ${hasChildren ? `<span class="${arrowClass}">›</span>` : ''}
         `;
 
-        // Category body (hidden by default)
-        const catBody = document.createElement('div');
-        catBody.className = 'cat-body';
+        const body = document.createElement('div');
+        body.className = isRoot ? 'cat-body' : 'subcat-body';
 
-        if (subCategories.length > 0) {
-            // Has subcategories → render nested accordions
-            subCategories.forEach(subCat => {
-                const subServices = dynamicServices.filter(s => s.category_id === subCat.id);
-                if (subServices.length === 0) return;
-
-                const subGroup = document.createElement('div');
-                subGroup.className = 'subcat-group';
-
-                const subHeader = document.createElement('div');
-                subHeader.className = 'subcat-header';
-                subHeader.innerHTML = `
-                    <span class="subcat-name">${subCat.name}</span>
-                    <span class="subcat-arrow">›</span>
-                `;
-
-                const subBody = document.createElement('div');
-                subBody.className = 'subcat-body';
-                subServices.forEach(s => subBody.appendChild(createServiceOption(s)));
-
-                subHeader.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    tg.HapticFeedback.impactOccurred('light');
-                    subGroup.classList.toggle('open');
-                });
-
-                subGroup.appendChild(subHeader);
-                subGroup.appendChild(subBody);
-                catBody.appendChild(subGroup);
-            });
-
-            // Also show any services directly in the parent category (not in a subcategory)
-            directServices.forEach(s => catBody.appendChild(createServiceOption(s)));
-        } else {
-            // No subcategories → services directly
-            directServices.forEach(s => catBody.appendChild(createServiceOption(s)));
-        }
-
-        catHeader.addEventListener('click', (e) => {
-            e.stopPropagation();
-            tg.HapticFeedback.impactOccurred('light');
-            catGroup.classList.toggle('open');
+        subCats.forEach(sub => {
+            const subNode = renderCategoryNode(sub, false);
+            if (subNode) body.appendChild(subNode);
         });
 
-        catGroup.appendChild(catHeader);
-        catGroup.appendChild(catBody);
-        resultsContainer.appendChild(catGroup);
+        dirServices.forEach(s => body.appendChild(createServiceOption(s)));
+
+        header.addEventListener('click', (e) => {
+            if (!isRoot) e.stopPropagation();
+            if (window.tg && tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            group.classList.toggle('open');
+        });
+
+        group.appendChild(header);
+        group.appendChild(body);
+        return group;
+    }
+
+    topCategories.forEach(topCat => {
+        const node = renderCategoryNode(topCat, true);
+        if (node) resultsContainer.appendChild(node);
     });
 
     // Uncategorized services at the bottom
