@@ -1,0 +1,324 @@
+/* ===== Custom Dropdown Component ===== */
+.custom-select-wrapper {
+    position: relative;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    border-radius: var(--border-radius);
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-smooth);
+    border: 1px solid var(--glass-border);
+    box-sizing: border-box;
+    z-index: 10;
+    /* Ensure it pops over the content below */
+}
+
+/* Add hardware acceleration to wrapper for smooth expansion */
+.custom-select-wrapper.open {
+    border-color: var(--accent-color);
+    box-shadow: var(--shadow-heavy);
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: transparent;
+    transform: translateZ(0);
+}
+
+.custom-select-trigger {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-color);
+    cursor: pointer;
+    border-radius: var(--border-radius);
+}
+
+.custom-select-trigger.selected {
+    color: var(--accent-hover);
+    font-weight: 600;
+}
+
+.arrow {
+    font-size: 12px;
+    color: var(--accent-color);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Bouncy rotation */
+}
+
+.custom-select-trigger.open .arrow {
+    transform: rotate(180deg);
+}
+
+/* --- Dropdown List (The animated pane) --- */
+.custom-options {
+    position: absolute;
+    top: 100%;
+    left: -1px;
+    right: -1px;
+    width: calc(100% + 2px);
+    background-color: var(--card-bg);
+    border: 1px solid var(--accent-color);
+    border-top: none;
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+    box-shadow: var(--shadow-heavy);
+    max-height: 45vh;
+    /* Taller dropdown for max visibility */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    /* Prevent body scroll when dropdown hits end */
+
+    /* Animation states */
+    opacity: 0;
+    visibility: hidden;
+    transform-origin: top;
+    transform: scaleY(0.9) translateZ(0);
+    /* SLIGHTLY LESS SCALE for snappier perceived pref */
+    transition: opacity 0.25s var(--bezier-smooth),
+        transform 0.25s var(--bezier-smooth),
+        visibility 0.25s var(--bezier-smooth);
+}
+
+.custom-options.open {
+    opacity: 1;
+    visibility: visible;
+    transform: scaleY(1) translateZ(0);
+}
+
+.search-container {
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background-color: var(--card-bg);
+}
+
+.search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--glass-border-logo);
+    background-color: var(--app-bg);
+    font-size: 15px;
+    color: var(--text-color);
+    outline: none;
+    transition: var(--transition-smooth);
+    -webkit-appearance: none;
+}
+
+.search-input:focus {
+    border-color: var(--accent-color);
+    background-color: var(--card-bg);
+    box-shadow: 0 0 0 3px rgba(226, 182, 179, 0.15);
+}
+
+.search-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* ===== Accordion Category Tree ===== */
+.cat-group {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    contain: layout style;
+}
+
+.cat-group:last-child {
+    border-bottom: none;
+}
+
+/* --- Category Headers (Top Level) --- */
+.cat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 18px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    background-color: transparent;
+    transition: background-color 0.2s ease;
+}
+
+.cat-header:active {
+    background-color: rgba(226, 182, 179, 0.08);
+}
+
+.cat-name {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.2;
+}
+
+/* Highlight open category header */
+.cat-group.open>.cat-header {
+    background-color: rgba(226, 182, 179, 0.05);
+}
+
+.cat-group.open>.cat-header .cat-name {
+    color: var(--accent-hover);
+}
+
+/* --- Subcategory Headers (Nested Levels) --- */
+.subcat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px 12px 26px;
+    /* Indent more than top level */
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: background-color 0.2s ease;
+}
+
+.subcat-header:active {
+    background-color: rgba(226, 182, 179, 0.12);
+}
+
+/* Highlight open subcategory header */
+.subcat-group.open>.subcat-header {
+    background-color: rgba(226, 182, 179, 0.08);
+}
+
+.subcat-name {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--accent-hover);
+}
+
+/* --- Arrows --- */
+.cat-arrow,
+.subcat-arrow {
+    font-size: 18px;
+    color: var(--text-muted);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center;
+    line-height: 1;
+}
+
+.cat-group.open>.cat-header>.cat-arrow,
+.subcat-group.open>.subcat-header>.subcat-arrow {
+    transform: rotate(90deg);
+    color: var(--accent-color);
+}
+
+/* --- Accordion Bodies --- */
+.cat-body,
+.subcat-body {
+    height: 0;
+    overflow: hidden;
+    /* CSS Transition on height requires precise JS triggering
+       to go to actual px height instead of auto, managed in app.js */
+    transition: height 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+    background-color: rgba(255, 255, 255, 0.5);
+}
+
+/* Service dot marker */
+.service-dot {
+    color: var(--accent-color);
+    font-size: 10px;
+    margin-right: 8px;
+    flex-shrink: 0;
+    opacity: 0.7;
+}
+
+/* --- Deeper Nesting Visual Hints --- */
+.subcat-group {
+    border-left: 2px solid transparent;
+}
+
+.subcat-group .subcat-group {
+    border-left-color: var(--accent-hover);
+    background-color: rgba(226, 182, 179, 0.09);
+    margin-left: 6px;
+}
+
+.subcat-group .subcat-group .subcat-group {
+    border-left-color: var(--text-muted);
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Divider for uncategorized */
+.cat-divider {
+    padding: 10px 18px;
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: var(--text-muted);
+    background-color: var(--app-bg);
+    letter-spacing: 0.5px;
+}
+
+/* --- Single Service Option Items --- */
+.custom-option {
+    padding: 14px 18px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    color: var(--text-color);
+    cursor: pointer;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    transition: background-color 0.2s;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* Indent services that are inside any body */
+.cat-body .custom-option {
+    padding-left: 26px;
+}
+
+.subcat-body .custom-option {
+    padding-left: 32px;
+}
+
+.custom-option:last-child {
+    border-bottom: none;
+}
+
+.custom-option:hover,
+.custom-option:active {
+    background-color: var(--app-bg);
+}
+
+.custom-option.selected {
+    background-color: var(--card-bg-selected);
+    color: var(--accent-hover);
+    font-weight: 600;
+    padding-left: 24px;
+    border-left: 4px solid var(--accent-hover);
+}
+
+.service-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-right: 12px;
+    line-height: 1.2;
+}
+
+.service-price {
+    font-weight: 600;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    background: var(--app-bg);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 13px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.custom-option.selected .service-price {
+    background-color: rgba(226, 182, 179, 0.15);
+    color: var(--accent-hover);
+}
