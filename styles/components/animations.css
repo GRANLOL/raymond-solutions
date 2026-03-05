@@ -1,0 +1,57 @@
+/* ===== Global Animations ===== */
+
+@keyframes float {
+    0% {
+        transform: translateY(0px) rotate(0deg);
+    }
+
+    50% {
+        transform: translateY(-8px) rotate(2deg);
+    }
+
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* --- Skeleton Loading Animations --- */
+.skeleton {
+    background: linear-gradient(90deg, #F0EBEA 25%, #FAFAF9 50%, #F0EBEA 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite linear;
+    border-radius: var(--border-radius-sm);
+    box-shadow: none;
+    border: none;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-date {
+    min-width: 80px;
+    height: 90px;
+    flex-shrink: 0;
+}
+
+.skeleton-time {
+    height: 54px;
+}
