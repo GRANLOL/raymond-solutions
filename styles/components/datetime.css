@@ -2,7 +2,7 @@
 .date-container {
     display: flex;
     overflow-x: auto;
-    gap: 12px;
+    gap: 6px;
     padding-bottom: 16px;
     /* Room for shadow & scrollbar */
     padding-top: 4px;
@@ -38,9 +38,9 @@
 
 /* --- Date Cards --- */
 .date-card {
-    min-width: 80px;
-    /* Standardized width */
-    height: 90px;
+    min-width: 44px;
+    /* Standardized narrower width for ~7 items */
+    height: 70px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -66,22 +66,22 @@
 }
 
 .date-day {
-    font-size: 13px;
+    font-size: 11px;
     text-transform: uppercase;
     font-weight: 600;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
     opacity: 0.8;
 }
 
 .date-num {
-    font-size: 24px;
+    font-size: 18px;
     font-weight: 700;
     line-height: 1;
 }
 
 .date-month {
-    font-size: 12px;
-    margin-top: 4px;
+    font-size: 10px;
+    margin-top: 2px;
     font-weight: 500;
     opacity: 0.9;
 }
@@ -89,8 +89,9 @@
 /* Date Off / Full States */
 .date-off,
 .date-full {
-    background-color: #F8F5F4;
-    color: #CBC4C2;
+    background-color: rgba(255, 255, 255, 0.05);
+    /* Dark theme off state */
+    color: rgba(255, 255, 255, 0.3);
     box-shadow: none;
     cursor: not-allowed;
     border-color: transparent;
@@ -154,8 +155,9 @@
 }
 
 .slot-busy {
-    background-color: #F8F5F4;
-    color: #CBC4C2;
+    background-color: rgba(255, 255, 255, 0.05);
+    /* Dark theme busy state */
+    color: rgba(255, 255, 255, 0.3);
     box-shadow: none;
     text-decoration: line-through;
     cursor: not-allowed;

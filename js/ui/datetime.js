@@ -30,7 +30,7 @@ export function generateDates() {
             card.classList.add('date-off');
             card.innerHTML = `
                 <div class="date-day">${dDay}</div>
-                <div class="date-month" style="font-size: 11px; font-weight: 500; margin-top: 6px;">Выходной</div>
+                <div class="date-month" style="font-size: 9px; font-weight: 500; margin-top: 4px;">Выходной</div>
             `;
         } else {
             card.innerHTML = `

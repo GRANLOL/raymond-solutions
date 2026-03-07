@@ -1,0 +1,41 @@
+{
+  "salon_name": "Nail Studio Deluxe",
+  "address": "г. Москва, ул. Арбат, д. 1, офис 10",
+  "map_url": "https://yandex.ru/maps/",
+  "portfolio_url": "https://t.me/your_portfolio_channel",
+  "working_hours": "ПН-ВС 10:00 - 21:00",
+  "price_list": [
+    {
+      "service": "Маникюр без покрытия",
+      "price": "1200"
+    },
+    {
+      "service": "Маникюр + Гель-лак",
+      "price": "2500"
+    },
+    {
+      "service": "Укрепление акрилом",
+      "price": "600"
+    },
+    {
+      "service": "Дизайн 1 ногтя",
+      "price": "200"
+    }
+  ],
+  "time_slots": [
+    "10:00",
+    "13:00",
+    "16:00",
+    "19:00"
+  ],
+  "booking_window": 14,
+  "working_days": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "blacklisted_dates": [],
+  "use_masters": true
+}
