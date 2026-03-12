@@ -10,6 +10,7 @@ import uvicorn
 from config import BOT_TOKEN, salon_config
 from database import init_db, get_all_busy_slots, get_all_services, get_all_time_slots, get_all_categories, get_all_masters
 from handlers import router
+from reminders import start_scheduler
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -76,6 +77,7 @@ async def main():
         await asyncio.gather(
             dp.start_polling(bot),
             server.serve(),
+            start_scheduler(bot),
         )
     finally:
         await bot.session.close()

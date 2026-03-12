@@ -39,6 +39,10 @@ async def init_db():
             await db.execute("ALTER TABLE bookings ADD COLUMN master_id INTEGER")
         except aiosqlite.OperationalError:
             pass
+        try:
+            await db.execute("ALTER TABLE bookings ADD COLUMN reminder_level INTEGER DEFAULT 0")
+        except aiosqlite.OperationalError:
+            pass
         await db.execute("""
             CREATE TABLE IF NOT EXISTS time_slots (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,6 +126,40 @@ async def cancel_booking(user_id: int):
         # If we need to delete just the latest, we could do WHERE id = (SELECT max(id) FROM bookings WHERE user_id = ?)
         # But deleting all bookings by user_id or the active one works if they only have 1 active booking.
         await db.execute("DELETE FROM bookings WHERE id = (SELECT id FROM bookings WHERE user_id = ? ORDER BY id DESC LIMIT 1)", (user_id,))
+        await db.commit()
+
+async def delete_booking_by_id(booking_id: int):
+    async with aiosqlite.connect("bookings.db") as db:
+        await db.execute("DELETE FROM bookings WHERE id = ?", (booking_id,))
+        await db.commit()
+
+async def get_bookings_for_reminders(max_level: int):
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute(
+            """
+            SELECT b.id, b.user_id, b.name, b.date, b.time, m.name as master_name, b.reminder_level
+            FROM bookings b 
+            LEFT JOIN masters m ON b.master_id = m.id 
+            WHERE b.reminder_level < ?
+            """, (max_level,)
+        ) as cursor:
+            return await cursor.fetchall()
+
+async def get_booking_by_id(booking_id: int):
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute(
+            """
+            SELECT b.name, b.phone, b.date, b.time, m.name 
+            FROM bookings b 
+            LEFT JOIN masters m ON b.master_id = m.id 
+            WHERE b.id = ?
+            """, (booking_id,)
+        ) as cursor:
+            return await cursor.fetchone()
+
+async def update_reminder_level(booking_id: int, level: int):
+    async with aiosqlite.connect("bookings.db") as db:
+        await db.execute("UPDATE bookings SET reminder_level = ? WHERE id = ?", (level, booking_id))
         await db.commit()
 
 from datetime import datetime

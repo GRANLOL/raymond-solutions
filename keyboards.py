@@ -305,3 +305,13 @@ def get_client_price_keyboard(page: int, total_pages: int):
         builder.row(*nav_buttons)
         
     return builder.as_markup()
+
+def get_reminder_keyboard(booking_id: int):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="✅ Подтвердить", callback_data=f"rem_conf_{booking_id}"))
+    builder.row(
+        InlineKeyboardButton(text="❌ Отменить", callback_data=f"rem_canc_{booking_id}"),
+        InlineKeyboardButton(text="🔄 Перенести", callback_data=f"rem_resched_{booking_id}")
+    )
+    return builder.as_markup()
