@@ -50,14 +50,23 @@ export function generateTimes(formattedDate = null) {
     timeGrid.innerHTML = '';
     const busyArr = formattedDate && store.busySlots[formattedDate] ? store.busySlots[formattedDate] : [];
 
-    const [startStr, endStr] = store.workingHours.split('-');
+    // Use regex to strictly extract HH:MM pairs, ignoring other text like "ПН-ВС"
+    const timeMatch = store.workingHours.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
+    let startStr = '10:00', endStr = '20:00';
+    if (timeMatch) {
+        startStr = timeMatch[1];
+        endStr = timeMatch[2];
+    } else if (store.workingHours.includes('-')) {
+        [startStr, endStr] = store.workingHours.split('-');
+    }
+
     const [startH, startM] = startStr.split(':').map(Number);
     const [endH, endM] = endStr.split(':').map(Number);
 
     const startMins = startH * 60 + startM;
     const endMins = endH * 60 + endM;
-    const interval = store.scheduleInterval || 30;
-    const serviceDur = store.selectedDuration || 60;
+    const interval = Number(store.scheduleInterval) || 30;
+    const serviceDur = Number(store.selectedDuration) || 60;
 
     for (let m = startMins; m + serviceDur <= endMins; m += interval) {
         const h = Math.floor(m / 60).toString().padStart(2, '0');
