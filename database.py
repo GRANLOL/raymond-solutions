@@ -51,6 +51,14 @@ async def init_db():
             await db.execute("ALTER TABLE bookings ADD COLUMN duration INTEGER DEFAULT 60")
         except aiosqlite.OperationalError:
             pass
+        try:
+            await db.execute("ALTER TABLE bookings ADD COLUMN service_name TEXT")
+        except aiosqlite.OperationalError:
+            pass
+        try:
+            await db.execute("ALTER TABLE bookings ADD COLUMN price INTEGER DEFAULT 0")
+        except aiosqlite.OperationalError:
+            pass
         await db.execute("""
             CREATE TABLE IF NOT EXISTS time_slots (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -67,11 +75,11 @@ async def init_db():
         """)
         await db.commit()
 
-async def add_booking(user_id, name, phone, date, time, master_id=None, duration=60):
+async def add_booking(user_id, name, phone, date, time, master_id=None, duration=60, service_name=None, price=0):
     async with aiosqlite.connect("bookings.db") as db:
         await db.execute(
-            "INSERT INTO bookings (user_id, name, phone, date, time, master_id, duration) VALUES (?, ?, ?, ?, ?, ?, ?)",
-            (user_id, name, phone, date, time, master_id, duration)
+            "INSERT INTO bookings (user_id, name, phone, date, time, master_id, duration, service_name, price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (user_id, name, phone, date, time, master_id, duration, service_name, price)
         )
         await db.commit()
 
@@ -402,3 +410,99 @@ async def update_service_category(service_id: int, category_id: int):
     async with aiosqlite.connect("bookings.db") as db:
         await db.execute("UPDATE services SET category_id=? WHERE id=?", (category_id, service_id))
         await db.commit()
+
+# ==================== ANALYTICS ====================
+
+def _date_from_period(period_days: int) -> str:
+    """Returns a date string (DD.MM.YYYY) that is `period_days` ago from today."""
+    from datetime import datetime, timedelta
+    return (datetime.now() - timedelta(days=period_days)).strftime("%d.%m.%Y")
+
+async def get_revenue_stats(period_days: int) -> dict:
+    """Returns total revenue (sum of price), number of bookings, and average price for the period."""
+    from_date = _date_from_period(period_days)
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("""
+            SELECT 
+                COUNT(*) as total_bookings,
+                COALESCE(SUM(CAST(price AS REAL)), 0) as total_revenue,
+                COALESCE(AVG(CAST(price AS REAL)), 0) as avg_price
+            FROM bookings
+            WHERE date >= ?
+        """, (from_date,)) as cursor:
+            row = await cursor.fetchone()
+            return {
+                "total_bookings": row[0] or 0,
+                "total_revenue": int(row[1] or 0),
+                "avg_price": int(row[2] or 0)
+            }
+
+async def get_top_services(period_days: int, limit: int = 5) -> list:
+    """Returns the most booked services by name for the period."""
+    from_date = _date_from_period(period_days)
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("""
+            SELECT service_name, COUNT(*) as cnt
+            FROM bookings
+            WHERE date >= ? AND service_name IS NOT NULL AND service_name != ''
+            GROUP BY service_name
+            ORDER BY cnt DESC
+            LIMIT ?
+        """, (from_date, limit)) as cursor:
+            rows = await cursor.fetchall()
+            return [(row[0], row[1]) for row in rows]
+
+async def get_bookings_by_weekday(period_days: int) -> dict:
+    """Returns booking count per day of week (Mon=0...Sun=6)."""
+    from_date = _date_from_period(period_days)
+    from datetime import datetime
+    weekday_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
+    result = {name: 0 for name in weekday_names}
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("SELECT date FROM bookings WHERE date >= ?", (from_date,)) as cursor:
+            rows = await cursor.fetchall()
+            for row in rows:
+                try:
+                    dt = datetime.strptime(row[0], "%d.%m.%Y")
+                    result[weekday_names[dt.weekday()] ] += 1
+                except (ValueError, IndexError):
+                    pass
+    return result
+
+async def get_peak_hours(period_days: int, top_n: int = 3) -> list:
+    """Returns the top N booking hours for the period."""
+    from_date = _date_from_period(period_days)
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("""
+            SELECT time, COUNT(*) as cnt
+            FROM bookings
+            WHERE date >= ? AND time IS NOT NULL
+            GROUP BY time
+            ORDER BY cnt DESC
+            LIMIT ?
+        """, (from_date, top_n)) as cursor:
+            rows = await cursor.fetchall()
+            return [(row[0], row[1]) for row in rows]
+
+async def get_client_stats(period_days: int) -> dict:
+    """Returns counts of new vs. returning clients by phone number."""
+    from_date = _date_from_period(period_days)
+    async with aiosqlite.connect("bookings.db") as db:
+        # All unique phones in this period
+        async with db.execute("""
+            SELECT DISTINCT phone FROM bookings WHERE date >= ?
+        """, (from_date,)) as cursor:
+            period_phones = {row[0] for row in await cursor.fetchall()}
+
+        # Of these, which also had bookings BEFORE the period
+        returning = set()
+        for phone in period_phones:
+            async with db.execute("""
+                SELECT 1 FROM bookings WHERE phone = ? AND date < ? LIMIT 1
+            """, (phone, from_date)) as cursor:
+                if await cursor.fetchone():
+                    returning.add(phone)
+
+        new_clients = len(period_phones - returning)
+        returning_clients = len(returning)
+        return {"new": new_clients, "returning": returning_clients}

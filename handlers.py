@@ -1851,3 +1851,92 @@ async def reminder_resched_cb(callback: types.CallbackQuery):
             await callback.bot.send_message(admin_id, msg)
         except:
             pass
+
+# ==================== ANALYTICS ====================
+
+@router.message(F.text == "📊 Статистика")
+async def analytics_menu_handler(message: types.Message):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(message.from_user.id) != admin_id:
+        return
+    await message.answer(
+        "📊 <b>Выберите период для статистики:</b>",
+        reply_markup=keyboards.get_analytics_keyboard(),
+        parse_mode="HTML"
+    )
+
+async def build_stats_report(period_days: int, period_label: str) -> str:
+    revenue = await database.get_revenue_stats(period_days)
+    top_services = await database.get_top_services(period_days, limit=5)
+    weekday_stats = await database.get_bookings_by_weekday(period_days)
+    peak_hours = await database.get_peak_hours(period_days, top_n=3)
+    clients = await database.get_client_stats(period_days)
+
+    lines = [f"📊 <b>Статистика: {period_label}</b>\n"]
+
+    # Revenue block
+    lines.append("💰 <b>Выручка:</b>")
+    total = revenue['total_revenue']
+    count = revenue['total_bookings']
+    avg = revenue['avg_price']
+    lines.append(f"  Записей: {count} | Сумма: {total:,} ₽ | Средний чек: {avg:,} ₽\n")
+
+    # Top services block
+    if top_services:
+        lines.append("🏆 <b>Топ услуг:</b>")
+        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+        for i, (name, cnt) in enumerate(top_services):
+            medal = medals[i] if i < len(medals) else f"{i+1}."
+            lines.append(f"  {medal} {name} — {cnt} записей")
+        lines.append("")
+    else:
+        lines.append("🏆 <b>Топ услуг:</b> нет данных\n")
+
+    # Weekday load
+    busy_days = {k: v for k, v in weekday_stats.items() if v > 0}
+    if busy_days:
+        lines.append("📅 <b>Загруженность по дням:</b>")
+        day_parts = " | ".join(f"{day}: {cnt}" for day, cnt in busy_days.items())
+        lines.append(f"  {day_parts}\n")
+
+    # Peak hours
+    if peak_hours:
+        lines.append("⏰ <b>Пиковые часы:</b>")
+        hour_parts = ", ".join(f"{h} ({c} зап.)" for h, c in peak_hours)
+        lines.append(f"  {hour_parts}\n")
+
+    # Client stats
+    lines.append("👥 <b>Клиенты:</b>")
+    lines.append(f"  Новых: {clients['new']} | Повторных: {clients['returning']}")
+
+    return "\n".join(lines)
+
+@router.callback_query(F.data == "stats_today")
+async def stats_today_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    await callback.message.edit_text("⏳ Считаю...", parse_mode="HTML")
+    report = await build_stats_report(0, "Сегодня")
+    await callback.message.edit_text(report, parse_mode="HTML")
+
+@router.callback_query(F.data == "stats_week")
+async def stats_week_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    await callback.message.edit_text("⏳ Считаю...", parse_mode="HTML")
+    report = await build_stats_report(7, "За 7 дней")
+    await callback.message.edit_text(report, parse_mode="HTML")
+
+@router.callback_query(F.data == "stats_month")
+async def stats_month_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    await callback.message.edit_text("⏳ Считаю...", parse_mode="HTML")
+    report = await build_stats_report(30, "За 30 дней")
+    await callback.message.edit_text(report, parse_mode="HTML")

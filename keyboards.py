@@ -22,7 +22,7 @@ admin_menu = ReplyKeyboardMarkup(
         [KeyboardButton(text="🗓 На сегодня"), KeyboardButton(text="🗓 Все записи"), KeyboardButton(text="📁 Категории")],
         [KeyboardButton(text="⚙️ Услуги"), KeyboardButton(text="📅 Окно брони")],
         [KeyboardButton(text="📅 График"), KeyboardButton(text="⚙️ Настройки"), KeyboardButton(text="📁 Excel")],
-        [KeyboardButton(text="🗑 Очистить"), KeyboardButton(text="👤 Меню клиента")]
+        [KeyboardButton(text="📊 Статистика"), KeyboardButton(text="🗑 Очистить"), KeyboardButton(text="👤 Меню клиента")]
     ],
     resize_keyboard=True
 )
@@ -329,4 +329,12 @@ def get_reminder_keyboard(booking_id: int):
         InlineKeyboardButton(text="❌ Отменить", callback_data=f"rem_canc_{booking_id}"),
         InlineKeyboardButton(text="🔄 Перенести", callback_data=f"rem_resched_{booking_id}")
     )
+    return builder.as_markup()
+
+def get_analytics_keyboard():
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="📅 Сегодня", callback_data="stats_today"))
+    builder.row(InlineKeyboardButton(text="📆 За 7 дней", callback_data="stats_week"))
+    builder.row(InlineKeyboardButton(text="🗓 За 30 дней", callback_data="stats_month"))
     return builder.as_markup()
