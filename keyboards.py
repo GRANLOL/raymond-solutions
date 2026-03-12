@@ -242,6 +242,16 @@ def get_system_settings_keyboard(use_masters: bool):
     builder.row(InlineKeyboardButton(text=f"Режим мастеров: {status_text}", callback_data="toggle_use_masters"))
     if use_masters:
         builder.row(InlineKeyboardButton(text="👥 Управление мастерами", callback_data="manage_masters"))
+    builder.row(InlineKeyboardButton(text="📬 Настройки напоминаний", callback_data="settings_reminders"))
+    return builder.as_markup()
+
+def get_reminder_settings_keyboard():
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="✏️ Текст за 24 часа", callback_data="edit_rem_text_1"))
+    builder.row(InlineKeyboardButton(text="✏️ Текст второго увед.", callback_data="edit_rem_text_2"))
+    builder.row(InlineKeyboardButton(text="🕒 Время второго увед.", callback_data="edit_rem_time_2"))
+    builder.row(InlineKeyboardButton(text="◀️ Назад в настройки", callback_data="back_to_settings"))
     return builder.as_markup()
 
 def get_masters_keyboard(masters):

@@ -5,6 +5,13 @@ from aiogram import Bot
 
 from database import get_bookings_for_reminders, update_reminder_level
 from keyboards import get_reminder_keyboard
+from config import salon_config
+
+def format_reminder(template: str, name: str, master: str, date: str, time: str) -> str:
+    return template.replace("{name}", name)\
+                   .replace("{master}", master)\
+                   .replace("{date}", date)\
+                   .replace("{time}", time)
 
 async def check_reminders(bot: Bot):
     try:
@@ -29,27 +36,30 @@ async def check_reminders(bot: Bot):
 
             # 24-hour reminder
             if reminder_level == 0 and hours_until <= 24:
-                msg = (f"Здравствуйте, {name}! 📬\n\n"
-                       f"Напоминаем о вашей записи на маникюр к мастеру *{master_display}*\n"
-                       f"Завтра ({date_str}) в {time_str}.\n\n"
-                       f"Будем вас ждать!")
+                template_1 = salon_config.get(
+                    "reminder_1_text",
+                    "Здравствуйте, {name}! Напоминаем о вашей записи к мастеру {master} завтра ({date}) в {time}."
+                )
+                msg = format_reminder(template_1, name, master_display, date_str, time_str)
                 try:
-                    await bot.send_message(user_id, text=msg, reply_markup=get_reminder_keyboard(b_id), parse_mode="Markdown")
+                    await bot.send_message(user_id, text=msg, reply_markup=get_reminder_keyboard(b_id), parse_mode="HTML")
                     await update_reminder_level(b_id, 1)
                 except Exception as e:
                     logging.error(f"Failed to send 24h reminder to {user_id}: {e}")
 
-            # 3-hour reminder
-            elif reminder_level == 1 and hours_until <= 3:
-                msg = (f"Здравствуйте, {name}! ⏳\n\n"
-                       f"Напоминаем, что ваша запись к мастеру *{master_display}* состоится уже скоро!\n"
-                       f"Сегодня ({date_str}) в {time_str}.\n\n"
-                       f"До встречи!")
+            # Second reminder (configurable hours)
+            h2 = salon_config.get("reminder_2_hours", 3)
+            if reminder_level == 1 and hours_until <= h2:
+                template_2 = salon_config.get(
+                    "reminder_2_text",
+                    "Здравствуйте, {name}! Напоминаем, ваша запись к мастеру {master} состоится сегодня ({date}) в {time}."
+                )
+                msg = format_reminder(template_2, name, master_display, date_str, time_str)
                 try:
-                    await bot.send_message(user_id, text=msg, reply_markup=get_reminder_keyboard(b_id), parse_mode="Markdown")
+                    await bot.send_message(user_id, text=msg, reply_markup=get_reminder_keyboard(b_id), parse_mode="HTML")
                     await update_reminder_level(b_id, 2)
                 except Exception as e:
-                    logging.error(f"Failed to send 3h reminder to {user_id}: {e}")
+                    logging.error(f"Failed to send configurable reminder to {user_id}: {e}")
                     
     except Exception as e:
         logging.error(f"Error in check_reminders: {e}")

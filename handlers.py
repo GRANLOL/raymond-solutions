@@ -23,7 +23,10 @@ class ClearBookingsForm(StatesGroup):
     waiting_for_period_start = State()
     waiting_for_period_end = State()
 
-    entering_phone = State()
+class EditReminderSettingsForm(StatesGroup):
+    text_1 = State()
+    text_2 = State()
+    time_2 = State()
 
 @router.message(Command("start"))
 async def start_handler(message: types.Message):
@@ -739,6 +742,87 @@ async def back_to_settings_callback(callback: types.CallbackQuery):
         "Настройки системы:",
         reply_markup=keyboards.get_system_settings_keyboard(use_masters)
     )
+
+# --- Настройки напоминаний ---
+@router.callback_query(F.data == "settings_reminders")
+async def settings_reminders_cb(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+        
+    t1 = salon_config.get("reminder_1_text", "Здравствуйте, {name}! Напоминаем о вашей записи к мастеру {master} завтра ({date}) в {time}.")
+    t2 = salon_config.get("reminder_2_text", "Здравствуйте, {name}! Напоминаем, ваша запись к мастеру {master} состоится сегодня ({date}) в {time}.")
+    h2 = salon_config.get("reminder_2_hours", 3)
+    
+    text = (
+        f"<b>Текущие настройки напоминаний:</b>\n\n"
+        f"<b>1️⃣ Напоминание (за 24 часа):</b>\n<i>{t1}</i>\n\n"
+        f"<b>2️⃣ Напоминание (за {h2} ч.):</b>\n<i>{t2}</i>\n"
+    )
+    await callback.message.edit_text(text, reply_markup=keyboards.get_reminder_settings_keyboard(), parse_mode="HTML")
+
+@router.callback_query(F.data == "edit_rem_text_1")
+async def edit_rem_text_1_cb(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(EditReminderSettingsForm.text_1)
+    msg = (
+        "Введите новый текст для <b>первого напоминания (за 24 часа)</b>.\n\n"
+        "Вы можете использовать следующие <code>переменные</code> (просто вставьте их в текст, и бот заменит их автоматически):\n"
+        "• <code>{name}</code> — Имя клиента\n"
+        "• <code>{master}</code> — Имя мастера\n"
+        "• <code>{date}</code> — Дата (например 15.03.2026)\n"
+        "• <code>{time}</code> — Время (например 14:00)\n\n"
+        "<b>Пример идеального запроса для копирования:</b>\n"
+        "<i>Здравствуйте, {name}! Ждём вас завтра на классный маникюр к мастеру {master}. Ваше время: {date} в {time}!</i>\n\n"
+        "Введите ваш текст:"
+    )
+    await callback.message.answer(msg, parse_mode="HTML", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+    await callback.answer()
+    
+@router.callback_query(F.data == "edit_rem_text_2")
+async def edit_rem_text_2_cb(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(EditReminderSettingsForm.text_2)
+    msg = (
+        "Введите новый текст для <b>второго напоминания</b>.\n\n"
+        "Все те же переменные доступны:\n"
+        "<code>{name}</code>, <code>{master}</code>, <code>{date}</code>, <code>{time}</code>\n\n"
+        "<b>Пример:</b>\n"
+        "<i>{name}, напоминаем, что ваша запись к {master} уже сегодня ({date}) в {time}! До встречи!</i>\n\n"
+        "Введите ваш текст:"
+    )
+    await callback.message.answer(msg, parse_mode="HTML", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+    await callback.answer()
+
+@router.callback_query(F.data == "edit_rem_time_2")
+async def edit_rem_time_2_cb(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(EditReminderSettingsForm.time_2)
+    await callback.message.answer("За сколько <b>часов</b> до сеанса отправлять второе напоминание?\nОтправьте только число (например: <code>1</code>, <code>2</code> или <code>3</code>):", parse_mode="HTML", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+    await callback.answer()
+
+@router.message(EditReminderSettingsForm.text_1)
+async def process_rem_text_1(message: types.Message, state: FSMContext):
+    update_config("reminder_1_text", message.text)
+    await state.clear()
+    await message.answer("✅ Текст первого напоминания успешно обновлен! Откройте 'Панель управления' -> 'Настройки'.")
+
+@router.message(EditReminderSettingsForm.text_2)
+async def process_rem_text_2(message: types.Message, state: FSMContext):
+    update_config("reminder_2_text", message.text)
+    await state.clear()
+    await message.answer("✅ Текст второго напоминания успешно обновлен!")
+
+@router.message(EditReminderSettingsForm.time_2)
+async def process_rem_time_2(message: types.Message, state: FSMContext):
+    try:
+        hours = int(message.text.strip())
+        if hours < 1 or hours > 23:
+            raise ValueError
+    except ValueError:
+        await message.answer("Пожалуйста, введите корректное число часов (от 1 до 23):", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+        return
+        
+    update_config("reminder_2_hours", hours)
+    await state.clear()
+    await message.answer(f"✅ Время второго напоминания успешно изменено на {hours} ч.")
 
 @router.callback_query(F.data.startswith("del_master_"))
 async def del_master_callback(callback: types.CallbackQuery):
