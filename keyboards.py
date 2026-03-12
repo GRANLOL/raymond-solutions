@@ -94,8 +94,10 @@ def get_service_edit_keyboard(service):
     from aiogram.utils.keyboard import InlineKeyboardBuilder
     builder = InlineKeyboardBuilder()
     s_id = service['id']
+    cur_dur = service.get('duration', 60)
     builder.row(InlineKeyboardButton(text="📝 Изменить название", callback_data=f"eds_name_{s_id}"))
     builder.row(InlineKeyboardButton(text="💸 Изменить цену", callback_data=f"eds_price_{s_id}"))
+    builder.row(InlineKeyboardButton(text=f"⏱ Изменить длительность ({cur_dur} м)", callback_data=f"eds_dur_{s_id}"))
     builder.row(InlineKeyboardButton(text="📁 Изменить категорию", callback_data=f"eds_cat_{s_id}"))
     builder.row(InlineKeyboardButton(text="❌ Удалить услугу", callback_data=f"del_srv_{s_id}"))
     builder.row(InlineKeyboardButton(text="◀️ Назад к списку", callback_data="back_to_services"))

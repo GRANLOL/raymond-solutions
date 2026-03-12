@@ -382,3 +382,23 @@ async def delete_category(category_id: int):
         await db.execute("UPDATE services SET category_id = NULL WHERE category_id = ?", (category_id,))
         await db.execute("DELETE FROM categories WHERE id = ?", (category_id,))
         await db.commit()
+
+async def update_service_name(service_id: int, name: str):
+    async with aiosqlite.connect("bookings.db") as db:
+        await db.execute("UPDATE services SET name=? WHERE id=?", (name, service_id))
+        await db.commit()
+
+async def update_service_price(service_id: int, price: str):
+    async with aiosqlite.connect("bookings.db") as db:
+        await db.execute("UPDATE services SET price=? WHERE id=?", (price, service_id))
+        await db.commit()
+
+async def update_service_duration(service_id: int, duration: int):
+    async with aiosqlite.connect("bookings.db") as db:
+        await db.execute("UPDATE services SET duration=? WHERE id=?", (duration, service_id))
+        await db.commit()
+
+async def update_service_category(service_id: int, category_id: int):
+    async with aiosqlite.connect("bookings.db") as db:
+        await db.execute("UPDATE services SET category_id=? WHERE id=?", (category_id, service_id))
+        await db.commit()

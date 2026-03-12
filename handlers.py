@@ -650,6 +650,15 @@ async def master_notifications_handler(message: types.Message):
 
 # --- ADMIN PANEL DATABASES Management ---
 
+class EditServiceNameForm(StatesGroup):
+    value = State()
+
+class EditServicePriceForm(StatesGroup):
+    value = State()
+
+class EditServiceDurationForm(StatesGroup):
+    value = State()
+
 class AddServiceForm(StatesGroup):
     category_id = State()
     name = State()
@@ -1656,6 +1665,111 @@ async def process_service_duration(message: types.Message, state: FSMContext):
     await message.answer(f"✅ Услуга '{name}' добавлена!", reply_markup=keyboards.get_services_keyboard(services))
 
 
+@router.callback_query(F.data.startswith("edit_srv_"))
+async def edit_service_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id: return
+    
+    parts = callback.data.split("_")
+    s_id = int(parts[2])
+    
+    # Needs a database helper to get single service
+    service = await database.get_service_by_id(s_id)
+    if not service:
+        await callback.answer("Услуга не найдена", show_alert=True)
+        return
+        
+    await callback.message.edit_text(
+        f"Управление услугой: <b>{service['name']}</b>\n"
+        f"Цена: {service['price']}\n"
+        f"Длительность: {service.get('duration', 60)} мин.",
+        reply_markup=keyboards.get_service_edit_keyboard(service),
+        parse_mode="HTML"
+    )
+
+@router.callback_query(F.data.startswith("del_srv_"))
+async def del_service_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id: return
+    s_id = int(callback.data.split("_")[2])
+    await database.delete_service(s_id)
+    services = await database.get_all_services()
+    await callback.message.edit_text("✅ Услуга удалена.", reply_markup=keyboards.get_services_keyboard(services))
+
+@router.callback_query(F.data.startswith("eds_name_"))
+async def eds_name_cb(callback: types.CallbackQuery, state: FSMContext):
+    s_id = int(callback.data.split("_")[2])
+    await state.update_data(edit_service_id=s_id)
+    await state.set_state(EditServiceNameForm.value)
+    await callback.message.answer("Введите новое название для услуги:", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+    await callback.answer()
+
+@router.message(EditServiceNameForm.value)
+async def process_eds_name(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    s_id = data['edit_service_id']
+    await database.update_service_name(s_id, message.text)
+    await state.clear()
+    
+    service = await database.get_service_by_id(s_id)
+    await message.answer("✅ Название изменено!", reply_markup=keyboards.get_service_edit_keyboard(service))
+
+@router.callback_query(F.data.startswith("eds_price_"))
+async def eds_price_cb(callback: types.CallbackQuery, state: FSMContext):
+    s_id = int(callback.data.split("_")[2])
+    await state.update_data(edit_service_id=s_id)
+    await state.set_state(EditServicePriceForm.value)
+    await callback.message.answer("Введите новую цену (текстом/числом):", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+    await callback.answer()
+
+@router.message(EditServicePriceForm.value)
+async def process_eds_price(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    s_id = data['edit_service_id']
+    await database.update_service_price(s_id, message.text)
+    await state.clear()
+    
+    service = await database.get_service_by_id(s_id)
+    await message.answer("✅ Цена изменена!", reply_markup=keyboards.get_service_edit_keyboard(service))
+
+@router.callback_query(F.data.startswith("eds_dur_"))
+async def eds_dur_cb(callback: types.CallbackQuery, state: FSMContext):
+    s_id = int(callback.data.split("_")[2])
+    await state.update_data(edit_service_id=s_id)
+    await state.set_state(EditServiceDurationForm.value)
+    await callback.message.answer("Введите новую длительность услуги в минутах (например, 30, 60, 90):", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+    await callback.answer()
+
+@router.message(EditServiceDurationForm.value)
+async def process_eds_dur(message: types.Message, state: FSMContext):
+    data = await state.get_data()
+    s_id = data['edit_service_id']
+    
+    try:
+        dur = int(message.text.strip())
+    except ValueError:
+        await message.answer("Пожалуйста, введите число в минутах (например, 60):", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+        return
+        
+    await database.update_service_duration(s_id, dur)
+    await state.clear()
+    
+    service = await database.get_service_by_id(s_id)
+    await message.answer("✅ Длительность изменена!", reply_markup=keyboards.get_service_edit_keyboard(service))
+
+@router.callback_query(F.data.startswith("eds_cat_"))
+async def eds_cat_cb(callback: types.CallbackQuery, state: FSMContext):
+    s_id = int(callback.data.split("_")[2])
+    categories = await database.get_all_categories()
+    if not categories:
+        await callback.answer("Категорий пока нет.", show_alert=True)
+        return
+    await state.update_data(edit_service_id=s_id)
+    # We reuse the sel_cat_ callback which was mapped to AddServiceForm.category_id, but here 
+    # we'll map it differently or just use the inline keyboard and catch it. We'll add a state.
+    # Let's add an explicit EditServiceCategoryForm if needed, or simply intercept "eds_sel_cat_"
+    await callback.message.answer("Эта функция редактирования категории в разработке.")
+    await callback.answer()
 
 
 # ========================================
