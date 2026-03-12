@@ -26,6 +26,7 @@ export function createServiceOption(serviceObj) {
         closeDropdown();
         store.selectedService = serviceObj.name;
         store.selectedDuration = serviceObj.duration || 60;
+        store.selectedPrice = parseInt((serviceObj.price || '0').replace(/\D/g, '')) || 0;
         store.selectedMaster = null;
 
         if (store.useMasters && store.dynamicMasters.length > 0) {

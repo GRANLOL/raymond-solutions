@@ -445,6 +445,7 @@ async def process_web_app_data(message: types.Message, state: FSMContext):
         duration = data.get('duration', 60)
         phone = data.get('phone')
         name = data.get('name')
+        price = int(data.get('price', 0) or 0)
         
         # Extract master_id from web app data
         admin_id = getenv("ADMIN_ID")
@@ -479,7 +480,9 @@ async def process_web_app_data(message: types.Message, state: FSMContext):
             date=date,
             time=time,
             master_id=master_id,
-            duration=duration
+            duration=duration,
+            service_name=service,
+            price=price
         )
         
         # ОЧИЩАЕ МЕНЮ ОТ GHOST KEYBOARD И ПОДТВЕРЖДЕНИЕ ПОЛЬЗОВАТЕЛЮ

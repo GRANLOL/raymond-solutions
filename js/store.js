@@ -5,6 +5,7 @@ export const store = {
     selectedService: null,
     selectedDate: null,
     selectedTime: null,
+    selectedPrice: 0,
     busySlots: {},
     dynamicServices: [],
     dynamicCategories: [],

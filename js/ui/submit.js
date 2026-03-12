@@ -24,6 +24,7 @@ export function submitData() {
         date: store.selectedDate,
         time: store.selectedTime,
         duration: store.selectedDuration || 60,
+        price: store.selectedPrice || 0,
         phone: phoneInput.value,
         name: nameInput.value.trim()
     };
