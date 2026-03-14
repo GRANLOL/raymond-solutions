@@ -5,6 +5,8 @@ export const config = {
     // Название заведения, которое отображается в шапке
     salonName: "Nail Studio Deluxe",
 
+    apiBaseUrl: "https://miki-suffruticose-restrainedly.ngrok-free.dev/api",
+
     // Список услуг, доступных для выбора с ценами
     services: [
         { name: "Маникюр без покрытия", price: "900 ₸" },

@@ -11,11 +11,16 @@ export function populateMasters() {
     store.dynamicMasters.forEach(masterObj => {
         const mDiv = document.createElement('div');
         mDiv.className = 'master-card';
-        // HTML structure for a master item
-        mDiv.innerHTML = `
-            <div class="master-avatar">👤</div>
-            <div class="master-name">${masterObj.name}</div>
-        `;
+
+        const avatar = document.createElement('div');
+        avatar.className = 'master-avatar';
+        avatar.textContent = '👤';
+
+        const name = document.createElement('div');
+        name.className = 'master-name';
+        name.textContent = masterObj.name;
+
+        mDiv.append(avatar, name);
 
         mDiv.addEventListener('click', async () => {
             tg.HapticFeedback.impactOccurred('light');

@@ -1,0 +1,43 @@
+import database
+
+
+async def build_stats_report(period_days: int, period_label: str) -> str:
+    revenue = await database.get_revenue_stats(period_days)
+    top_services = await database.get_top_services(period_days, limit=5)
+    weekday_stats = await database.get_bookings_by_weekday(period_days)
+    peak_hours = await database.get_peak_hours(period_days, top_n=3)
+    clients = await database.get_client_stats(period_days)
+
+    lines = [f"📊 <b>Статистика: {period_label}</b>\n"]
+
+    lines.append("💰 <b>Выручка:</b>")
+    total = revenue["total_revenue"]
+    count = revenue["total_bookings"]
+    avg = revenue["avg_price"]
+    lines.append(f"  Записей: {count} | Сумма: {total:,} ₽ | Средний чек: {avg:,} ₽\n")
+
+    if top_services:
+        lines.append("🏆 <b>Топ услуг:</b>")
+        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
+        for i, (name, cnt) in enumerate(top_services):
+            medal = medals[i] if i < len(medals) else f"{i + 1}."
+            lines.append(f"  {medal} {name} — {cnt} записей")
+        lines.append("")
+    else:
+        lines.append("🏆 <b>Топ услуг:</b> нет данных\n")
+
+    busy_days = {k: v for k, v in weekday_stats.items() if v > 0}
+    if busy_days:
+        lines.append("📅 <b>Загруженность по дням:</b>")
+        day_parts = " | ".join(f"{day}: {cnt}" for day, cnt in busy_days.items())
+        lines.append(f"  {day_parts}\n")
+
+    if peak_hours:
+        lines.append("⏰ <b>Пиковые часы:</b>")
+        hour_parts = ", ".join(f"{h} ({c} зап.)" for h, c in peak_hours)
+        lines.append(f"  {hour_parts}\n")
+
+    lines.append("👥 <b>Клиенты:</b>")
+    lines.append(f"  Новых: {clients['new']} | Повторных: {clients['returning']}")
+
+    return "\n".join(lines)

@@ -1,13 +1,17 @@
 import pandas as pd
 import os
+import re
 from aiogram import Router, F, types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import FSInputFile
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import database
 import keyboards
+from analytics_service import build_stats_report as build_analytics_report
+from booking_service import cancel_booking_and_notify, finalize_web_booking, format_user_booking_text
+from booking_validation import validate_web_booking as service_validate_web_booking
 from os import getenv
 from config import salon_config, update_config
 import json
@@ -439,13 +443,18 @@ async def handle_portfolio(message: types.Message):
 async def process_web_app_data(message: types.Message, state: FSMContext):
     try:
         data = json.loads(message.web_app_data.data)
-        service = data.get('service')
-        date = data.get('date')
-        time = data.get('time')
-        duration = data.get('duration', 60)
-        phone = data.get('phone')
-        name = data.get('name')
-        price = int(data.get('price', 0) or 0)
+        validated, error_text = await service_validate_web_booking(data)
+        if error_text:
+            await message.answer(error_text)
+            return
+
+        service = validated["service"]["name"]
+        date = validated["date"]
+        time = validated["time"]
+        duration = validated["duration"]
+        phone = validated["phone"]
+        name = validated["name"]
+        price = validated["price"]
         
         # Extract master_id from web app data
         admin_id = getenv("ADMIN_ID")
@@ -458,70 +467,23 @@ async def process_web_app_data(message: types.Message, state: FSMContext):
         if use_masters:
             master = await database.get_master_by_telegram_id(str(message.from_user.id))
             is_master = bool(master)
-            master_id_raw = data.get("master_id")
-            if master_id_raw:
-                master_id = int(master_id_raw)
-                
-        booked_slots = await database.get_booked_slots(date, master_id=master_id)
-        if time in booked_slots:
-            await message.answer("К сожалению, это время уже занято. Пожалуйста, выберите другое в приложении.")
-            return
-
-        if name:
-            full_name_service = f"{name} ({service})"
-        else:
-            full_name_service = f"{message.from_user.full_name} ({service})"
+            master_id = validated["master_id"]
         
-        # SAVE BOOKING ONCE
-        await database.add_booking(
-            user_id=message.from_user.id,
-            name=full_name_service,
-            phone=phone,
+        await finalize_web_booking(
+            message,
+            service=service,
             date=date,
             time=time,
-            master_id=master_id,
             duration=duration,
-            service_name=service,
-            price=price
+            phone=phone,
+            name=name,
+            price=price,
+            master_id=master_id,
+            is_admin=is_admin,
+            is_master=is_master,
         )
-        
-        # ОЧИЩАЕ МЕНЮ ОТ GHOST KEYBOARD И ПОДТВЕРЖДЕНИЕ ПОЛЬЗОВАТЕЛЮ
-        # Отправляем сообщение удаляющее пустую клавиатуру WebApp
-        remove_msg = await message.answer(
-            "⏳ Загрузка...",
-            reply_markup=types.ReplyKeyboardRemove()
-        )
-        
-        # Удаляем его и отправляем финальное с новой клавиатурой
-        await remove_msg.delete()
-
-        await message.answer(
-            f"✅ Запись подтверждена!\n\nУслуга: {service}\n📅 Дата: {date}\n⏰ Время: {time}\n📞 Телефон: {phone}\n\nЖдем вас!",
-            reply_markup=keyboards.get_main_menu(is_admin=is_admin, is_master=is_master)
-        )
-        
-        # NOTIFY ADMIN AND MASTER
-        msg_text = f"🔔 НОВАЯ ЗАПИСЬ!\n\n👤 Клиент: {full_name_service}\n📞 Тел: {phone}\n📅 Дата: {date}\n⏰ Время: {time}"
-        
-        if admin_id:
-            try:
-                await message.bot.send_message(admin_id, msg_text)
-            except Exception:
-                pass 
-                
-        # Notify the selected master (not the current user)
-        if master_id:
-            try:
-                import aiosqlite
-                async with aiosqlite.connect("bookings.db") as db:
-                    async with db.execute("SELECT telegram_id FROM masters WHERE id = ?", (master_id,)) as cursor:
-                        row = await cursor.fetchone()
-                        if row and row[0]:
-                            await message.bot.send_message(row[0], msg_text)
-            except Exception as e:
-                print(f"Failed sending to master: {e}")
-                
         await state.clear()
+        return
 
     except Exception as e:
         print(f"Error parsing web_app_data: {e}")
@@ -529,72 +491,60 @@ async def process_web_app_data(message: types.Message, state: FSMContext):
 
 @router.message(F.text == "📋 Мои записи")
 async def my_bookings_handler(message: types.Message):
-    booking = await database.get_user_booking(message.from_user.id)
-    
-    if not booking:
+    bookings = await database.get_user_bookings(message.from_user.id)
+
+    if not bookings:
         await message.answer("У вас нет активных записей. 🤷‍♀️")
         return
-        
-    name, phone, date, time, booking_id = booking
-    
-    text = "🗓 <b>Ваша активная запись:</b>\n\n"
-    text += f"👤 <b>Имя/Услуга:</b> {name}\n"
-    text += f"📅 <b>Дата:</b> {date}\n"
-    text += f"⏰ <b>Время:</b> {time}\n"
-    text += f"📞 <b>Телефон:</b> {phone}\n"
-    
-    await message.answer(text, reply_markup=keyboards.get_cancel_keyboard(message.from_user.id), parse_mode="HTML")
+
+    for booking_id, name, phone, date, time, _master_id in bookings:
+        await message.answer(
+            format_user_booking_text(name, phone, date, time),
+            reply_markup=keyboards.get_cancel_keyboard(message.from_user.id, booking_id),
+            parse_mode="HTML"
+        )
 
 @router.callback_query(F.data.startswith("cancel_"))
 async def cancel_booking_callback(callback: types.CallbackQuery):
-    user_id_str = callback.data.split("_")[1]
-    
+    parts = callback.data.split("_")
+    user_id_str = parts[1]
+
     if str(callback.from_user.id) != user_id_str:
         await callback.answer("Это не ваша запись!", show_alert=True)
         return
-        
-    user_id = int(user_id_str)
-    
-    # Get booking details before deleting to notify admin and master
-    booking = await database.get_user_booking(user_id)
+
+    booking_id = None
+    if len(parts) > 2:
+        try:
+            booking_id = int(parts[2])
+        except ValueError:
+            booking_id = None
+
+    if booking_id is not None:
+        booking = await database.get_booking_record_by_id(booking_id)
+    else:
+        booking = await database.get_user_booking(int(user_id_str))
+        booking_id = booking[4] if booking else None
+
     if not booking:
         await callback.answer("Запись уже отменена или не найдена.", show_alert=True)
         return
-        
-    # updated get_user_booking must return master_id. We need to go adjust database.py if not.
-    # We will assume get_user_booking returns a length of 5.
-    name, phone, date, time, booking_id = booking[:5]
-    
-    # We'll fetch the true active booking from DB directly to get master_id safely without breaking existing structures
-    import aiosqlite
-    master_id = None
-    async with aiosqlite.connect("bookings.db") as db:
-        async with db.execute("SELECT master_id FROM bookings WHERE id = ?", (booking_id,)) as cursor:
-            row = await cursor.fetchone()
-            if row and row[0]:
-                master_id = row[0]
-                
-    await database.cancel_booking(user_id)
-    await callback.message.edit_text("✅ Ваша запись успешно отменена.")
-    
-    msg_text = f"⚠️ ОТМЕНА ЗАПИСИ\n\nКлиент: {name}\nДата: {date}\nВремя: {time}\nТелефон: {phone}"
-    admin_id = getenv("ADMIN_ID")
-    if admin_id:
-        try:
-            await callback.bot.send_message(admin_id, msg_text)
-        except Exception:
-            pass
-            
-    if master_id:
-        try:
-            # We need to fetch the master telegram ID
-            async with aiosqlite.connect("bookings.db") as db:
-                async with db.execute("SELECT telegram_id FROM masters WHERE id = ?", (master_id,)) as cursor:
-                    row = await cursor.fetchone()
-                    if row and row[0]:
-                        await callback.bot.send_message(row[0], msg_text)
-        except Exception as e:
-            print(f"Failed sending cancel to master: {e}")
+
+    if len(parts) > 2 and booking_id is not None:
+        _id, _user_id, name, phone, date, time, master_id = booking
+    else:
+        name, phone, date, time, booking_id = booking[:5]
+        master_id = None
+
+    await cancel_booking_and_notify(
+        callback,
+        booking_id=booking_id,
+        name=name,
+        phone=phone,
+        date=date,
+        time=time,
+        master_id=master_id,
+    )
 
 # --- MASTER PANEL ---
 @router.message(F.text == "💼 Панель мастера")
@@ -653,12 +603,6 @@ async def master_notifications_handler(message: types.Message):
 
 # --- ADMIN PANEL DATABASES Management ---
 
-class EditServiceNameForm(StatesGroup):
-    value = State()
-
-class EditServicePriceForm(StatesGroup):
-    value = State()
-
 class EditReminderSettingsForm(StatesGroup):
     text_1 = State()
     text_2 = State()
@@ -666,9 +610,6 @@ class EditReminderSettingsForm(StatesGroup):
 
 class EditTimezoneForm(StatesGroup):
     offset = State()
-
-class EditServiceDurationForm(StatesGroup):
-    value = State()
 
 class AddServiceForm(StatesGroup):
     category_id = State()
@@ -1679,113 +1620,6 @@ async def process_service_duration(message: types.Message, state: FSMContext):
     await message.answer(f"✅ Услуга '{name}' добавлена!", reply_markup=keyboards.get_services_keyboard(services))
 
 
-@router.callback_query(F.data.startswith("edit_srv_"))
-async def edit_service_callback(callback: types.CallbackQuery):
-    admin_id = getenv("ADMIN_ID")
-    if not admin_id or str(callback.from_user.id) != admin_id: return
-    
-    parts = callback.data.split("_")
-    s_id = int(parts[2])
-    
-    # Needs a database helper to get single service
-    service = await database.get_service_by_id(s_id)
-    if not service:
-        await callback.answer("Услуга не найдена", show_alert=True)
-        return
-        
-    await callback.message.edit_text(
-        f"Управление услугой: <b>{service['name']}</b>\n"
-        f"Цена: {service['price']}\n"
-        f"Длительность: {service.get('duration', 60)} мин.",
-        reply_markup=keyboards.get_service_edit_keyboard(service),
-        parse_mode="HTML"
-    )
-
-@router.callback_query(F.data.startswith("del_srv_"))
-async def del_service_callback(callback: types.CallbackQuery):
-    admin_id = getenv("ADMIN_ID")
-    if not admin_id or str(callback.from_user.id) != admin_id: return
-    s_id = int(callback.data.split("_")[2])
-    await database.delete_service(s_id)
-    services = await database.get_all_services()
-    await callback.message.edit_text("✅ Услуга удалена.", reply_markup=keyboards.get_services_keyboard(services))
-
-@router.callback_query(F.data.startswith("eds_name_"))
-async def eds_name_cb(callback: types.CallbackQuery, state: FSMContext):
-    s_id = int(callback.data.split("_")[2])
-    await state.update_data(edit_service_id=s_id)
-    await state.set_state(EditServiceNameForm.value)
-    await callback.message.answer("Введите новое название для услуги:", reply_markup=keyboards.get_cancel_admin_action_keyboard())
-    await callback.answer()
-
-@router.message(EditServiceNameForm.value)
-async def process_eds_name(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    s_id = data['edit_service_id']
-    await database.update_service_name(s_id, message.text)
-    await state.clear()
-    
-    service = await database.get_service_by_id(s_id)
-    await message.answer("✅ Название изменено!", reply_markup=keyboards.get_service_edit_keyboard(service))
-
-@router.callback_query(F.data.startswith("eds_price_"))
-async def eds_price_cb(callback: types.CallbackQuery, state: FSMContext):
-    s_id = int(callback.data.split("_")[2])
-    await state.update_data(edit_service_id=s_id)
-    await state.set_state(EditServicePriceForm.value)
-    await callback.message.answer("Введите новую цену (текстом/числом):", reply_markup=keyboards.get_cancel_admin_action_keyboard())
-    await callback.answer()
-
-@router.message(EditServicePriceForm.value)
-async def process_eds_price(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    s_id = data['edit_service_id']
-    await database.update_service_price(s_id, message.text)
-    await state.clear()
-    
-    service = await database.get_service_by_id(s_id)
-    await message.answer("✅ Цена изменена!", reply_markup=keyboards.get_service_edit_keyboard(service))
-
-@router.callback_query(F.data.startswith("eds_dur_"))
-async def eds_dur_cb(callback: types.CallbackQuery, state: FSMContext):
-    s_id = int(callback.data.split("_")[2])
-    await state.update_data(edit_service_id=s_id)
-    await state.set_state(EditServiceDurationForm.value)
-    await callback.message.answer("Введите новую длительность услуги в минутах (например, 30, 60, 90):", reply_markup=keyboards.get_cancel_admin_action_keyboard())
-    await callback.answer()
-
-@router.message(EditServiceDurationForm.value)
-async def process_eds_dur(message: types.Message, state: FSMContext):
-    data = await state.get_data()
-    s_id = data['edit_service_id']
-    
-    try:
-        dur = int(message.text.strip())
-    except ValueError:
-        await message.answer("Пожалуйста, введите число в минутах (например, 60):", reply_markup=keyboards.get_cancel_admin_action_keyboard())
-        return
-        
-    await database.update_service_duration(s_id, dur)
-    await state.clear()
-    
-    service = await database.get_service_by_id(s_id)
-    await message.answer("✅ Длительность изменена!", reply_markup=keyboards.get_service_edit_keyboard(service))
-
-@router.callback_query(F.data.startswith("eds_cat_"))
-async def eds_cat_cb(callback: types.CallbackQuery, state: FSMContext):
-    s_id = int(callback.data.split("_")[2])
-    categories = await database.get_all_categories()
-    if not categories:
-        await callback.answer("Категорий пока нет.", show_alert=True)
-        return
-    await state.update_data(edit_service_id=s_id)
-    # We reuse the sel_cat_ callback which was mapped to AddServiceForm.category_id, but here 
-    # we'll map it differently or just use the inline keyboard and catch it. We'll add a state.
-    # Let's add an explicit EditServiceCategoryForm if needed, or simply intercept "eds_sel_cat_"
-    await callback.message.answer("Эта функция редактирования категории в разработке.")
-    await callback.answer()
-
-
 # ========================================
 # Напоминания: Обработка кнопок
 # ========================================
@@ -1869,50 +1703,7 @@ async def analytics_menu_handler(message: types.Message):
     )
 
 async def build_stats_report(period_days: int, period_label: str) -> str:
-    revenue = await database.get_revenue_stats(period_days)
-    top_services = await database.get_top_services(period_days, limit=5)
-    weekday_stats = await database.get_bookings_by_weekday(period_days)
-    peak_hours = await database.get_peak_hours(period_days, top_n=3)
-    clients = await database.get_client_stats(period_days)
-
-    lines = [f"📊 <b>Статистика: {period_label}</b>\n"]
-
-    # Revenue block
-    lines.append("💰 <b>Выручка:</b>")
-    total = revenue['total_revenue']
-    count = revenue['total_bookings']
-    avg = revenue['avg_price']
-    lines.append(f"  Записей: {count} | Сумма: {total:,} ₽ | Средний чек: {avg:,} ₽\n")
-
-    # Top services block
-    if top_services:
-        lines.append("🏆 <b>Топ услуг:</b>")
-        medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
-        for i, (name, cnt) in enumerate(top_services):
-            medal = medals[i] if i < len(medals) else f"{i+1}."
-            lines.append(f"  {medal} {name} — {cnt} записей")
-        lines.append("")
-    else:
-        lines.append("🏆 <b>Топ услуг:</b> нет данных\n")
-
-    # Weekday load
-    busy_days = {k: v for k, v in weekday_stats.items() if v > 0}
-    if busy_days:
-        lines.append("📅 <b>Загруженность по дням:</b>")
-        day_parts = " | ".join(f"{day}: {cnt}" for day, cnt in busy_days.items())
-        lines.append(f"  {day_parts}\n")
-
-    # Peak hours
-    if peak_hours:
-        lines.append("⏰ <b>Пиковые часы:</b>")
-        hour_parts = ", ".join(f"{h} ({c} зап.)" for h, c in peak_hours)
-        lines.append(f"  {hour_parts}\n")
-
-    # Client stats
-    lines.append("👥 <b>Клиенты:</b>")
-    lines.append(f"  Новых: {clients['new']} | Повторных: {clients['returning']}")
-
-    return "\n".join(lines)
+    return await build_analytics_report(period_days, period_label)
 
 @router.callback_query(F.data == "stats_today")
 async def stats_today_callback(callback: types.CallbackQuery):

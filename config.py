@@ -14,6 +14,7 @@ def update_config(key: str, value):
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_ID = os.getenv("ADMIN_ID")
+WEBAPP_URL = os.getenv("WEBAPP_URL", salon_config.get("webapp_url", "https://granlol.github.io/manicure-webapp/"))
 
 if not BOT_TOKEN:
     raise ValueError("No BOT_TOKEN provided in the .env file")

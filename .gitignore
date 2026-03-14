@@ -5,6 +5,9 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 .env
 bookings.db
 config.json
+run_stdout.log
+run_stderr.log

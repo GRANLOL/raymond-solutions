@@ -1,11 +1,11 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton, WebAppInfo
 from datetime import datetime, timedelta
-from config import salon_config
+from config import WEBAPP_URL, salon_config
 
 # Главное меню (обычные кнопки под строкой ввода)
 def get_main_menu(is_admin: bool = False, is_master: bool = False):
     kb = [
-        [KeyboardButton(text="🌸 Записаться", web_app=WebAppInfo(url="https://granlol.github.io/manicure-webapp/"))],
+        [KeyboardButton(text="🌸 Записаться", web_app=WebAppInfo(url=WEBAPP_URL))],
         [KeyboardButton(text="💸 Прайс-лист"), KeyboardButton(text="💅 Портфолио")],
         [KeyboardButton(text="📍 Адрес"), KeyboardButton(text="📋 Мои записи")]
     ]
@@ -37,10 +37,11 @@ master_menu = ReplyKeyboardMarkup(
 )
 
 # Инлайн кнопка отмены
-def get_cancel_keyboard(user_id: int):
+def get_cancel_keyboard(user_id: int, booking_id: int | None = None):
+    callback_data = f"cancel_{user_id}_{booking_id}" if booking_id is not None else f"cancel_{user_id}"
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="❌ Отменить запись", callback_data=f"cancel_{user_id}")]
+            [InlineKeyboardButton(text="❌ Отменить запись", callback_data=callback_data)]
         ]
     )
 

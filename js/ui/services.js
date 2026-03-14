@@ -10,11 +10,20 @@ const customOptionsContainer = document.getElementById('custom-options');
 export function createServiceOption(serviceObj) {
     const optionDiv = document.createElement('div');
     optionDiv.className = 'custom-option';
-    optionDiv.innerHTML = `
-        <span class="service-dot">●</span>
-        <span class="service-name">${serviceObj.name}</span>
-        <span class="service-price">${serviceObj.price}</span>
-    `;
+
+    const dot = document.createElement('span');
+    dot.className = 'service-dot';
+    dot.textContent = '●';
+
+    const name = document.createElement('span');
+    name.className = 'service-name';
+    name.textContent = serviceObj.name;
+
+    const price = document.createElement('span');
+    price.className = 'service-price';
+    price.textContent = serviceObj.price;
+
+    optionDiv.append(dot, name, price);
     optionDiv.addEventListener('click', () => {
         tg.HapticFeedback.impactOccurred('light');
         selectLabel.textContent = serviceObj.name;
@@ -89,10 +98,17 @@ export function populateServices(searchQuery = '') {
         const arrowClass = isRoot ? 'cat-arrow' : 'subcat-arrow';
         const hasChildren = subCats.length > 0 || dirServices.length > 0;
 
-        header.innerHTML = `
-            <span class="${titleClass}">${cat.name}</span>
-            ${hasChildren ? `<span class="${arrowClass}">›</span>` : ''}
-        `;
+        const title = document.createElement('span');
+        title.className = titleClass;
+        title.textContent = cat.name;
+        header.appendChild(title);
+
+        if (hasChildren) {
+            const arrow = document.createElement('span');
+            arrow.className = arrowClass;
+            arrow.textContent = '›';
+            header.appendChild(arrow);
+        }
 
         const body = document.createElement('div');
         body.className = isRoot ? 'cat-body' : 'subcat-body';

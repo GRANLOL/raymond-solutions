@@ -1,4 +1,5 @@
 import aiosqlite
+import re
 
 async def init_db():
     async with aiosqlite.connect("bookings.db") as db:
@@ -93,6 +94,26 @@ async def get_booked_slots(date, master_id=None):
                 rows = await cursor.fetchall()
         return [row[0] for row in rows]
 
+async def get_busy_slots_by_date(date: str, master_id: int | None = None):
+    async with aiosqlite.connect("bookings.db") as db:
+        if master_id is not None:
+            query = "SELECT time, duration FROM bookings WHERE date = ? AND master_id = ?"
+            params = (date, master_id)
+        else:
+            query = "SELECT time, duration FROM bookings WHERE date = ?"
+            params = (date,)
+
+        async with db.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+
+    return [
+        {
+            "time": row[0],
+            "duration": row[1] if len(row) > 1 and row[1] is not None else 60,
+        }
+        for row in rows
+    ]
+
 async def get_all_bookings():
     async with aiosqlite.connect("bookings.db") as db:
         async with db.execute("""
@@ -135,19 +156,29 @@ async def get_user_booking(user_id: int):
         async with db.execute("SELECT name, phone, date, time, id FROM bookings WHERE user_id = ? ORDER BY id DESC LIMIT 1", (user_id,)) as cursor:
             return await cursor.fetchone()
 
-async def cancel_booking(user_id: int):
+async def get_user_bookings(user_id: int):
     async with aiosqlite.connect("bookings.db") as db:
-        # Removed the most recent booking for this user
-        # Note: we can also target specific IDs, but following instructions directly
-        # If we need to delete just the latest, we could do WHERE id = (SELECT max(id) FROM bookings WHERE user_id = ?)
-        # But deleting all bookings by user_id or the active one works if they only have 1 active booking.
-        await db.execute("DELETE FROM bookings WHERE id = (SELECT id FROM bookings WHERE user_id = ? ORDER BY id DESC LIMIT 1)", (user_id,))
-        await db.commit()
+        async with db.execute("""
+            SELECT id, name, phone, date, time, master_id
+            FROM bookings
+            WHERE user_id = ?
+            ORDER BY id DESC
+        """, (user_id,)) as cursor:
+            return await cursor.fetchall()
 
 async def delete_booking_by_id(booking_id: int):
     async with aiosqlite.connect("bookings.db") as db:
         await db.execute("DELETE FROM bookings WHERE id = ?", (booking_id,))
         await db.commit()
+
+async def get_booking_record_by_id(booking_id: int):
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("""
+            SELECT id, user_id, name, phone, date, time, master_id
+            FROM bookings
+            WHERE id = ?
+        """, (booking_id,)) as cursor:
+            return await cursor.fetchone()
 
 async def get_bookings_for_reminders(max_level: int):
     async with aiosqlite.connect("bookings.db") as db:
@@ -288,6 +319,14 @@ async def get_master_by_telegram_id(telegram_id: str):
                 return {"id": row[0], "name": row[1], "telegram_id": row[2], "category_id": row[3]}
             return None
 
+async def get_master_by_id(master_id: int):
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("SELECT id, name, telegram_id, category_id FROM masters WHERE id = ?", (master_id,)) as cursor:
+            row = await cursor.fetchone()
+            if row:
+                return {"id": row[0], "name": row[1], "telegram_id": row[2], "category_id": row[3]}
+            return None
+
 # --- CRUD for Services ---
 async def add_service(name: str, price: str, duration: int = 60, description: str = "", category_id: int | None = None):
     async with aiosqlite.connect("bookings.db") as db:
@@ -321,6 +360,35 @@ async def get_service_by_id(service_id: int):
             if r:
                 return {"id": r[0], "name": r[1], "price": r[2], "duration": r[3], "description": r[4], "category_id": r[5], "category_name": r[6]}
             return None
+
+async def get_service_by_name(service_name: str):
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("""
+            SELECT s.id, s.name, s.price, s.duration, s.description, s.category_id, c.name
+            FROM services s
+            LEFT JOIN categories c ON s.category_id = c.id
+            WHERE lower(trim(s.name)) = lower(trim(?))
+            LIMIT 1
+        """, (service_name,)) as cursor:
+            row = await cursor.fetchone()
+
+    if not row:
+        return None
+
+    price_text = row[2] or ""
+    price_digits = re.sub(r"\D", "", str(price_text))
+    price_value = int(price_digits) if price_digits else 0
+
+    return {
+        "id": row[0],
+        "name": row[1],
+        "price": row[2],
+        "price_value": price_value,
+        "duration": row[3],
+        "description": row[4],
+        "category_id": row[5],
+        "category_name": row[6],
+    }
 
 async def get_all_services():
     async with aiosqlite.connect("bookings.db") as db:
@@ -391,118 +459,108 @@ async def delete_category(category_id: int):
         await db.execute("DELETE FROM categories WHERE id = ?", (category_id,))
         await db.commit()
 
-async def update_service_name(service_id: int, name: str):
-    async with aiosqlite.connect("bookings.db") as db:
-        await db.execute("UPDATE services SET name=? WHERE id=?", (name, service_id))
-        await db.commit()
-
-async def update_service_price(service_id: int, price: str):
-    async with aiosqlite.connect("bookings.db") as db:
-        await db.execute("UPDATE services SET price=? WHERE id=?", (price, service_id))
-        await db.commit()
-
 async def update_service_duration(service_id: int, duration: int):
     async with aiosqlite.connect("bookings.db") as db:
         await db.execute("UPDATE services SET duration=? WHERE id=?", (duration, service_id))
         await db.commit()
 
-async def update_service_category(service_id: int, category_id: int):
-    async with aiosqlite.connect("bookings.db") as db:
-        await db.execute("UPDATE services SET category_id=? WHERE id=?", (category_id, service_id))
-        await db.commit()
-
 # ==================== ANALYTICS ====================
 
-def _date_from_period(period_days: int) -> str:
-    """Returns a date string (DD.MM.YYYY) that is `period_days` ago from today."""
+def _period_start_date(period_days: int):
     from datetime import datetime, timedelta
-    return (datetime.now() - timedelta(days=period_days)).strftime("%d.%m.%Y")
+    return (datetime.now() - timedelta(days=period_days)).date()
+
+
+def _parse_booking_date(value: str):
+    from datetime import datetime
+    try:
+        return datetime.strptime(value, "%d.%m.%Y").date()
+    except (TypeError, ValueError):
+        return None
+
+
+async def _get_bookings_in_period(period_days: int):
+    start_date = _period_start_date(period_days)
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("""
+            SELECT date, time, price, service_name, phone
+            FROM bookings
+        """) as cursor:
+            rows = await cursor.fetchall()
+
+    bookings = []
+    for row in rows:
+        booking_date = _parse_booking_date(row[0])
+        if booking_date and booking_date >= start_date:
+            bookings.append({
+                "date": booking_date,
+                "time": row[1],
+                "price": row[2],
+                "service_name": row[3],
+                "phone": row[4],
+            })
+    return bookings
+
 
 async def get_revenue_stats(period_days: int) -> dict:
-    """Returns total revenue (sum of price), number of bookings, and average price for the period."""
-    from_date = _date_from_period(period_days)
-    async with aiosqlite.connect("bookings.db") as db:
-        async with db.execute("""
-            SELECT 
-                COUNT(*) as total_bookings,
-                COALESCE(SUM(CAST(price AS REAL)), 0) as total_revenue,
-                COALESCE(AVG(CAST(price AS REAL)), 0) as avg_price
-            FROM bookings
-            WHERE date >= ?
-        """, (from_date,)) as cursor:
-            row = await cursor.fetchone()
-            return {
-                "total_bookings": row[0] or 0,
-                "total_revenue": int(row[1] or 0),
-                "avg_price": int(row[2] or 0)
-            }
+    bookings = await _get_bookings_in_period(period_days)
+    prices = [int(float(item["price"] or 0)) for item in bookings]
+    total_bookings = len(bookings)
+    total_revenue = sum(prices)
+    avg_price = int(total_revenue / total_bookings) if total_bookings else 0
+    return {
+        "total_bookings": total_bookings,
+        "total_revenue": total_revenue,
+        "avg_price": avg_price,
+    }
+
 
 async def get_top_services(period_days: int, limit: int = 5) -> list:
-    """Returns the most booked services by name for the period."""
-    from_date = _date_from_period(period_days)
-    async with aiosqlite.connect("bookings.db") as db:
-        async with db.execute("""
-            SELECT service_name, COUNT(*) as cnt
-            FROM bookings
-            WHERE date >= ? AND service_name IS NOT NULL AND service_name != ''
-            GROUP BY service_name
-            ORDER BY cnt DESC
-            LIMIT ?
-        """, (from_date, limit)) as cursor:
-            rows = await cursor.fetchall()
-            return [(row[0], row[1]) for row in rows]
+    from collections import Counter
+
+    bookings = await _get_bookings_in_period(period_days)
+    counter = Counter(
+        item["service_name"]
+        for item in bookings
+        if item["service_name"]
+    )
+    return counter.most_common(limit)
+
 
 async def get_bookings_by_weekday(period_days: int) -> dict:
-    """Returns booking count per day of week (Mon=0...Sun=6)."""
-    from_date = _date_from_period(period_days)
-    from datetime import datetime
     weekday_names = ["Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс"]
     result = {name: 0 for name in weekday_names}
-    async with aiosqlite.connect("bookings.db") as db:
-        async with db.execute("SELECT date FROM bookings WHERE date >= ?", (from_date,)) as cursor:
-            rows = await cursor.fetchall()
-            for row in rows:
-                try:
-                    dt = datetime.strptime(row[0], "%d.%m.%Y")
-                    result[weekday_names[dt.weekday()] ] += 1
-                except (ValueError, IndexError):
-                    pass
+    bookings = await _get_bookings_in_period(period_days)
+    for item in bookings:
+        result[weekday_names[item["date"].weekday()]] += 1
     return result
 
+
 async def get_peak_hours(period_days: int, top_n: int = 3) -> list:
-    """Returns the top N booking hours for the period."""
-    from_date = _date_from_period(period_days)
-    async with aiosqlite.connect("bookings.db") as db:
-        async with db.execute("""
-            SELECT time, COUNT(*) as cnt
-            FROM bookings
-            WHERE date >= ? AND time IS NOT NULL
-            GROUP BY time
-            ORDER BY cnt DESC
-            LIMIT ?
-        """, (from_date, top_n)) as cursor:
-            rows = await cursor.fetchall()
-            return [(row[0], row[1]) for row in rows]
+    from collections import Counter
+
+    bookings = await _get_bookings_in_period(period_days)
+    counter = Counter(item["time"] for item in bookings if item["time"])
+    return counter.most_common(top_n)
+
 
 async def get_client_stats(period_days: int) -> dict:
-    """Returns counts of new vs. returning clients by phone number."""
-    from_date = _date_from_period(period_days)
+    period_bookings = await _get_bookings_in_period(period_days)
+    period_phones = {item["phone"] for item in period_bookings if item["phone"]}
+    period_start = _period_start_date(period_days)
+
     async with aiosqlite.connect("bookings.db") as db:
-        # All unique phones in this period
-        async with db.execute("""
-            SELECT DISTINCT phone FROM bookings WHERE date >= ?
-        """, (from_date,)) as cursor:
-            period_phones = {row[0] for row in await cursor.fetchall()}
+        async with db.execute("SELECT phone, date FROM bookings") as cursor:
+            rows = await cursor.fetchall()
 
-        # Of these, which also had bookings BEFORE the period
-        returning = set()
-        for phone in period_phones:
-            async with db.execute("""
-                SELECT 1 FROM bookings WHERE phone = ? AND date < ? LIMIT 1
-            """, (phone, from_date)) as cursor:
-                if await cursor.fetchone():
-                    returning.add(phone)
+    returning = set()
+    for phone, date_str in rows:
+        if phone not in period_phones:
+            continue
+        booking_date = _parse_booking_date(date_str)
+        if booking_date and booking_date < period_start:
+            returning.add(phone)
 
-        new_clients = len(period_phones - returning)
-        returning_clients = len(returning)
-        return {"new": new_clients, "returning": returning_clients}
+    new_clients = len(period_phones - returning)
+    returning_clients = len(returning)
+    return {"new": new_clients, "returning": returning_clients}

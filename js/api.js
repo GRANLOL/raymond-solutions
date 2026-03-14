@@ -1,7 +1,21 @@
 import { config } from './config.js';
 import { store } from './store.js';
+import { tg } from './telegram.js';
 
-const API_BASE_URL = 'https://miki-suffruticose-restrainedly.ngrok-free.dev/api';
+const API_BASE_URL = config.apiBaseUrl;
+
+function getApiHeaders() {
+    const headers = {
+        'ngrok-skip-browser-warning': 'true',
+        'Content-Type': 'application/json'
+    };
+
+    if (tg.initData) {
+        headers['X-Telegram-Init-Data'] = tg.initData;
+    }
+
+    return headers;
+}
 
 export async function fetchBusySlots(masterId = null) {
     try {
@@ -10,10 +24,7 @@ export async function fetchBusySlots(masterId = null) {
             url += `?master_id=${masterId}`;
         }
         const response = await fetch(url, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Content-Type': 'application/json'
-            }
+            headers: getApiHeaders()
         });
 
         if (!response.ok) {
@@ -36,10 +47,7 @@ export async function fetchBusySlots(masterId = null) {
 export async function fetchContent() {
     try {
         const response = await fetch(`${API_BASE_URL}/get-content`, {
-            headers: {
-                'ngrok-skip-browser-warning': 'true',
-                'Content-Type': 'application/json'
-            }
+            headers: getApiHeaders()
         });
         if (!response.ok) throw new Error('Server returned ' + response.status);
 
