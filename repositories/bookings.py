@@ -89,9 +89,8 @@ async def get_busy_slots_by_date(date: str, master_id: int | None = None):
 async def get_all_bookings():
     async with aiosqlite.connect("bookings.db") as db:
         async with db.execute("""
-            SELECT b.name, b.phone, b.date, b.time, m.name 
+            SELECT b.name, b.phone, b.date, b.time, b.price
             FROM bookings b 
-            LEFT JOIN masters m ON b.master_id = m.id 
             ORDER BY COALESCE(b.date_iso, b.date), b.time
         """) as cursor:
             return await cursor.fetchall()
@@ -104,9 +103,8 @@ async def clear_bookings():
 async def get_bookings_by_date_full(target_date: str):
     async with aiosqlite.connect("bookings.db") as db:
         async with db.execute("""
-            SELECT b.name, b.phone, b.date, b.time, m.name 
+            SELECT b.name, b.phone, b.date, b.time, b.price
             FROM bookings b 
-            LEFT JOIN masters m ON b.master_id = m.id 
             WHERE b.date = ? 
             ORDER BY b.time
         """, (target_date,)) as cursor:

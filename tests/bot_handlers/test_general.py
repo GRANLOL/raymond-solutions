@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import ANY, MagicMock, patch
+from unittest.mock import ANY, patch
 
 import bot_handlers.general as general_handlers
 from tests.support import make_message
@@ -41,15 +41,14 @@ class GeneralHandlerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_export_excel_handler_sends_document_for_admin(self):
         message = make_message(user_id=1)
-        fake_df = MagicMock()
 
         with patch.object(general_handlers, "getenv", return_value="1"), \
-             patch.object(general_handlers.database, "get_all_bookings", return_value=[("A", "B", "C", "D", "E")]), \
-             patch.object(general_handlers.pd, "DataFrame", return_value=fake_df), \
+             patch.object(general_handlers.database, "get_all_bookings", return_value=[("A", "B", "01.01.2026", "10:00", 2500)]), \
+             patch.object(general_handlers, "_build_bookings_workbook") as build_mock, \
              patch.object(general_handlers, "FSInputFile", return_value="excel-file"), \
              patch.object(general_handlers.os, "remove") as remove_mock:
             await general_handlers.export_excel_handler(message)
 
-        fake_df.to_excel.assert_called_once()
+        build_mock.assert_called_once_with("bookings_export.xlsx", [("A", "B", "01.01.2026", "10:00", 2500)])
         message.answer_document.assert_awaited_once_with("excel-file", caption=ANY)
-        remove_mock.assert_called_once()
+        remove_mock.assert_called_once_with("bookings_export.xlsx")
