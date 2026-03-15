@@ -1,6 +1,9 @@
 import unittest
+from datetime import date
 
-from repositories.analytics import get_revenue_stats
+from unittest.mock import patch
+
+from repositories.analytics import get_bookings_by_weekday, get_revenue_stats
 from repositories.bookings import create_booking_if_available, get_all_bookings
 from repositories.categories import (
     add_category,
@@ -94,6 +97,36 @@ class BookingRepositoryTests(RepositoryTestCase):
 
         self.assertEqual(stats["total_bookings"], 1)
         self.assertEqual(stats["total_revenue"], 2000)
+
+    async def test_today_stats_do_not_include_future_bookings(self):
+        await create_booking_if_available(
+            user_id=1,
+            name="Sunday Client",
+            phone="+10000000001",
+            date="15.03.2026",
+            time="10:00",
+            master_id=1,
+            duration=60,
+            service_name="Маникюр",
+            price=2000,
+        )
+        await create_booking_if_available(
+            user_id=2,
+            name="Monday Client",
+            phone="+10000000002",
+            date="16.03.2026",
+            time="11:00",
+            master_id=1,
+            duration=60,
+            service_name="Маникюр",
+            price=2500,
+        )
+
+        with patch("repositories.analytics._period_start_date", return_value=date(2026, 3, 15)):
+            weekday_stats = await get_bookings_by_weekday(0)
+
+        self.assertEqual(weekday_stats["Вс"], 1)
+        self.assertEqual(weekday_stats["Пн"], 0)
 
 
 class CategoryRepositoryTests(RepositoryTestCase):

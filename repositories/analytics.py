@@ -4,6 +4,7 @@ from .base import _parse_booking_date, _period_start_date, aiosqlite
 
 async def _get_bookings_in_period(period_days: int):
     start_date = _period_start_date(period_days)
+    end_date = _period_start_date(0)
     async with aiosqlite.connect("bookings.db") as db:
         async with db.execute("""
             SELECT date, time, price, service_name, phone
@@ -14,7 +15,7 @@ async def _get_bookings_in_period(period_days: int):
     bookings = []
     for row in rows:
         booking_date = _parse_booking_date(row[0])
-        if booking_date and booking_date >= start_date:
+        if booking_date and start_date <= booking_date <= end_date:
             bookings.append({
                 "date": booking_date,
                 "time": row[1],
