@@ -239,15 +239,17 @@ export function initServiceListeners() {
 
 export function toggleDropdown() {
     tg.HapticFeedback.impactOccurred('light');
-    selectTrigger.classList.toggle('open');
-    customOptionsContainer.classList.toggle('open');
-    document.getElementById('service-wrapper').classList.toggle('open');
+    const isOpen = selectTrigger.classList.toggle('open');
+    customOptionsContainer.classList.toggle('open', isOpen);
+    document.getElementById('service-wrapper').classList.toggle('open', isOpen);
+    document.body.classList.toggle('dropdown-open', isOpen);
 }
 
 export function closeDropdown() {
     selectTrigger.classList.remove('open');
     customOptionsContainer.classList.remove('open');
     document.getElementById('service-wrapper').classList.remove('open');
+    document.body.classList.remove('dropdown-open');
     const searchInput = document.getElementById('search-input');
     if (searchInput) {
         searchInput.value = '';

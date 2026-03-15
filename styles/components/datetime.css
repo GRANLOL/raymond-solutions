@@ -89,12 +89,13 @@
 /* Date Off / Full States */
 .date-off,
 .date-full {
-    background-color: rgba(255, 255, 255, 0.05);
-    /* Dark theme off state */
-    color: rgba(255, 255, 255, 0.3);
-    box-shadow: none;
+    background: rgba(255, 248, 244, 0.58);
+    color: rgba(91, 58, 45, 0.46);
+    box-shadow: 0 14px 28px rgba(83, 43, 25, 0.08);
     cursor: not-allowed;
-    border-color: transparent;
+    border-color: rgba(255, 255, 255, 0.55);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
 }
 
 .date-off:active,
@@ -102,16 +103,18 @@
     transform: none;
 }
 
-.date-full::after {
-    content: "Полн";
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--error-color);
-    letter-spacing: 0.5px;
+.date-off .date-day,
+.date-full .date-day,
+.date-off .date-num,
+.date-full .date-num,
+.date-off .date-month,
+.date-full .date-month {
+    color: inherit;
+}
+
+.date-off .date-num,
+.date-full .date-num {
+    opacity: 0.72;
 }
 
 /* Update inner text for active state */

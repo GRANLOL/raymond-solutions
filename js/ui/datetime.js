@@ -90,16 +90,17 @@ export function generateDates() {
 
         const targetDay = targetDate.getDay();
         const isOffDay = !store.workingDays.includes(targetDay) || store.blacklistedDates.includes(formattedDate);
-        const hasSlots = hasAvailableSlots(formattedDate); // Check for available slots
+        const hasSlots = hasAvailableSlots(formattedDate);
 
         const card = document.createElement('div');
         card.className = 'date-card fade-in';
 
-        if (isOffDay || !hasSlots) { // Disable if it's an off day or has no available slots
-            card.classList.add('date-off');
+        if (isOffDay || !hasSlots) {
+            card.classList.add(isOffDay ? 'date-off' : 'date-full');
             card.innerHTML = `
                 <div class="date-day">${dDay}</div>
-                <div class="date-month" style="font-size: 9px; font-weight: 500; margin-top: 4px;">${isOffDay ? 'Выходной' : 'Нет мест'}</div>
+                <div class="date-num">${dNum}</div>
+                <div class="date-month">${dMonth}</div>
             `;
         } else {
             card.innerHTML = `
@@ -119,7 +120,7 @@ export function generateTimes(formattedDate = null) {
     timeGrid.innerHTML = '';
     const busyArr = formattedDate && store.busySlots[formattedDate] ? store.busySlots[formattedDate] : [];
 
-    // Use regex to strictly extract HH:MM pairs, ignoring other text like "ПН-ВС"
+    // Use regex to strictly extract HH:MM pairs, ignoring other text like day labels
     const timeMatch = store.workingHours.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
     let startStr = '10:00', endStr = '20:00';
     if (timeMatch) {
