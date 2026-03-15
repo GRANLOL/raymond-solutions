@@ -1,4 +1,5 @@
 import database
+from money import format_money
 
 
 async def build_stats_report(period_days: int, period_label: str) -> str:
@@ -14,7 +15,7 @@ async def build_stats_report(period_days: int, period_label: str) -> str:
     total = revenue["total_revenue"]
     count = revenue["total_bookings"]
     avg = revenue["avg_price"]
-    lines.append(f"  Записей: {count} | Сумма: {total:,} ₽ | Средний чек: {avg:,} ₽\n")
+    lines.append(f"  Записей: {count} | Сумма: {format_money(total)} | Средний чек: {format_money(avg)}\n")
 
     if top_services:
         lines.append("🏆 <b>Топ услуг:</b>")

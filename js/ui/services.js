@@ -6,6 +6,17 @@ const selectTrigger = document.getElementById('select-trigger');
 const selectLabel = document.getElementById('select-label');
 const customOptionsContainer = document.getElementById('custom-options');
 
+function formatServicePrice(priceValue) {
+    const raw = String(priceValue ?? '').trim();
+    if (!raw) {
+        return '';
+    }
+    if (/[₸₽$€]/.test(raw)) {
+        return raw;
+    }
+    return `${raw} ${store.currencySymbol}`;
+}
+
 export function createServiceOption(serviceObj) {
     const optionDiv = document.createElement('div');
     optionDiv.className = 'custom-option';
@@ -20,7 +31,7 @@ export function createServiceOption(serviceObj) {
 
     const price = document.createElement('span');
     price.className = 'service-price';
-    price.textContent = serviceObj.price;
+    price.textContent = formatServicePrice(serviceObj.price);
 
     optionDiv.append(dot, name, price);
     optionDiv.addEventListener('click', () => {

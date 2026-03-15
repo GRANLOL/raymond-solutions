@@ -2,6 +2,14 @@ from __future__ import annotations
 
 from .base import _slot_overlaps, _time_to_minutes, _to_iso_date, aiosqlite, datetime
 
+
+def _duration_from_range(start_time: str, end_time: str) -> int:
+    start_minutes = _time_to_minutes(start_time)
+    end_minutes = _time_to_minutes(end_time)
+    if start_minutes is None or end_minutes is None or end_minutes <= start_minutes:
+        return 0
+    return end_minutes - start_minutes
+
 async def add_booking(user_id, name, phone, date, time, master_id=None, duration=60, service_name=None, price=0):
     date_iso = _to_iso_date(date)
     async with aiosqlite.connect("bookings.db") as db:
@@ -77,20 +85,39 @@ async def get_busy_slots_by_date(date: str, master_id: int | None = None):
 
         async with db.execute(query, params) as cursor:
             rows = await cursor.fetchall()
+        async with db.execute(
+            "SELECT start_time, end_time FROM blocked_slots WHERE date = ? ORDER BY start_time",
+            (date,),
+        ) as cursor:
+            blocked_rows = await cursor.fetchall()
 
-    return [
+    busy_slots = [
         {
             "time": row[0],
             "duration": row[1] if len(row) > 1 and row[1] is not None else 60,
         }
         for row in rows
     ]
+    for start_time, end_time in blocked_rows:
+        duration = _duration_from_range(start_time, end_time)
+        if duration > 0:
+            busy_slots.append({"time": start_time, "duration": duration})
+    return busy_slots
 
 async def get_all_bookings():
     async with aiosqlite.connect("bookings.db") as db:
         async with db.execute("""
             SELECT b.name, b.phone, b.date, b.time, b.price
             FROM bookings b 
+            ORDER BY COALESCE(b.date_iso, b.date), b.time
+        """) as cursor:
+            return await cursor.fetchall()
+
+async def get_all_bookings_detailed():
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("""
+            SELECT b.id, b.name, b.phone, b.date, b.time, b.price
+            FROM bookings b
             ORDER BY COALESCE(b.date_iso, b.date), b.time
         """) as cursor:
             return await cursor.fetchall()
@@ -106,6 +133,16 @@ async def get_bookings_by_date_full(target_date: str):
             SELECT b.name, b.phone, b.date, b.time, b.price
             FROM bookings b 
             WHERE b.date = ? 
+            ORDER BY b.time
+        """, (target_date,)) as cursor:
+            return await cursor.fetchall()
+
+async def get_bookings_by_date_detailed(target_date: str):
+    async with aiosqlite.connect("bookings.db") as db:
+        async with db.execute("""
+            SELECT b.id, b.name, b.phone, b.date, b.time, b.price
+            FROM bookings b
+            WHERE b.date = ?
             ORDER BY b.time
         """, (target_date,)) as cursor:
             return await cursor.fetchall()
@@ -244,6 +281,43 @@ async def delete_past_bookings():
             await db.commit()
         return count
 
+async def add_blocked_slot(date: str, start_time: str, end_time: str, reason: str | None = None):
+    date_iso = _to_iso_date(date)
+    async with aiosqlite.connect("bookings.db") as db:
+        await db.execute(
+            """
+            INSERT INTO blocked_slots (date, date_iso, start_time, end_time, reason)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (date, date_iso, start_time, end_time, reason or None),
+        )
+        await db.commit()
+
+async def get_blocked_slots(date: str | None = None):
+    async with aiosqlite.connect("bookings.db") as db:
+        if date is None:
+            query = """
+                SELECT id, date, start_time, end_time, reason
+                FROM blocked_slots
+                ORDER BY COALESCE(date_iso, date), start_time
+            """
+            params = ()
+        else:
+            query = """
+                SELECT id, date, start_time, end_time, reason
+                FROM blocked_slots
+                WHERE date = ?
+                ORDER BY start_time
+            """
+            params = (date,)
+        async with db.execute(query, params) as cursor:
+            return await cursor.fetchall()
+
+async def delete_blocked_slot(blocked_slot_id: int):
+    async with aiosqlite.connect("bookings.db") as db:
+        await db.execute("DELETE FROM blocked_slots WHERE id = ?", (blocked_slot_id,))
+        await db.commit()
+
 async def get_all_busy_slots(master_id: int | None = None):
     from collections import defaultdict
     async with aiosqlite.connect("bookings.db") as db:
@@ -253,6 +327,8 @@ async def get_all_busy_slots(master_id: int | None = None):
         else:
             async with db.execute("SELECT date, time, duration FROM bookings") as cursor:
                 rows = await cursor.fetchall()
+        async with db.execute("SELECT date, start_time, end_time FROM blocked_slots") as cursor:
+            blocked_rows = await cursor.fetchall()
         busy_slots = defaultdict(list)
         if rows:
             for r in rows:
@@ -260,4 +336,9 @@ async def get_all_busy_slots(master_id: int | None = None):
                 time_str = r[1]
                 duration = r[2] if len(r) > 2 and r[2] is not None else 60
                 busy_slots[date].append({"time": time_str, "duration": duration})
+        if blocked_rows:
+            for date, start_time, end_time in blocked_rows:
+                duration = _duration_from_range(start_time, end_time)
+                if duration > 0:
+                    busy_slots[date].append({"time": start_time, "duration": duration})
         return dict(busy_slots)

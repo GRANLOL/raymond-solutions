@@ -81,6 +81,16 @@ async def init_db():
             )
         """)
         await db.execute("""
+            CREATE TABLE IF NOT EXISTS blocked_slots (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                date TEXT NOT NULL,
+                date_iso TEXT,
+                start_time TEXT NOT NULL,
+                end_time TEXT NOT NULL,
+                reason TEXT
+            )
+        """)
+        await db.execute("""
             UPDATE bookings
             SET date_iso = substr(date, 7, 4) || '-' || substr(date, 4, 2) || '-' || substr(date, 1, 2)
             WHERE date_iso IS NULL
@@ -91,4 +101,5 @@ async def init_db():
         await db.execute("CREATE INDEX IF NOT EXISTS idx_bookings_date_master_time ON bookings(date, master_id, time)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_bookings_date_iso_time ON bookings(date_iso, time)")
         await db.execute("CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings(user_id)")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_blocked_slots_date_time ON blocked_slots(date, start_time, end_time)")
         await db.commit()

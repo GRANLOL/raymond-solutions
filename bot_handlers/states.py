@@ -79,3 +79,14 @@ class AddBookingWindowForm(StatesGroup):
 
 class AddBlacklistDateForm(StatesGroup):
     date = State()
+
+
+class AddBlockedSlotForm(StatesGroup):
+    date = State()
+    start_time = State()
+    end_time = State()
+    reason = State()
+
+
+class EditCurrencyForm(StatesGroup):
+    symbol = State()

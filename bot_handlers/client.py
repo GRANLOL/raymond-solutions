@@ -3,18 +3,20 @@ from __future__ import annotations
 import json
 import logging
 
+from money import get_currency_symbol
+
 from .base import (
     F,
-    Router,
     FSMContext,
-    format_user_booking_text,
-    finalize_web_booking,
+    Router,
     cancel_booking_and_notify,
-    service_validate_web_booking,
+    database,
+    finalize_web_booking,
+    format_user_booking_text,
     getenv,
     keyboards,
-    database,
     salon_config,
+    service_validate_web_booking,
     types,
 )
 
@@ -26,6 +28,7 @@ def format_price_list_page(services, page: int, page_size: int = 20):
     from collections import defaultdict
     import math
 
+    currency = get_currency_symbol()
     categories = defaultdict(list)
     for service in services:
         cat_name = service.get("category_name") or "Без категории"
@@ -35,7 +38,7 @@ def format_price_list_page(services, page: int, page_size: int = 20):
     for category_name in sorted(categories.keys()):
         lines.append(f"<b>📃 {category_name}</b>")
         for service in categories[category_name]:
-            lines.append(f"▪️ {service['name']} — {service['price']}₽")
+            lines.append(f"▪️ {service['name']} — {service['price']} {currency}")
         lines.append("")
 
     total_lines = len(lines)
@@ -58,11 +61,7 @@ async def handle_price(message: types.Message):
         return
 
     text, total_pages = format_price_list_page(services, page=0, page_size=25)
-    await message.answer(
-        text,
-        parse_mode="HTML",
-        reply_markup=keyboards.get_client_price_keyboard(0, total_pages),
-    )
+    await message.answer(text, parse_mode="HTML", reply_markup=keyboards.get_client_price_keyboard(0, total_pages))
 
 
 @router.callback_query(F.data.startswith("client_price_page_"))
@@ -86,13 +85,13 @@ async def price_page_cb(callback: types.CallbackQuery):
     )
 
 
-@router.message(F.text == "📍 Адрес")
+@router.message(F.text == "📌 Адрес")
 async def handle_address(message: types.Message):
     address = salon_config.get("address", "Адрес не указан.")
     hours = salon_config.get("working_hours", "")
     map_url = salon_config.get("map_url", "")
 
-    text = f"<b>📍 Наш адрес</b>\n\n🏠 {address}\n"
+    text = f"<b>📌 Наш адрес</b>\n\n🏠 {address}\n"
     if hours:
         text += f"⌱ <i>{hours}</i>\n"
     if map_url:

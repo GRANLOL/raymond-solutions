@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+from money import get_currency_symbol
+
 from .base import F, Router, FSMContext, build_category_list_text, filter_valid_parent_categories, keyboards, database, escape, getenv, types
 from .states import AddServiceForm, AddSubcategoryExistingForm, CategoryWizard, EditCategoryForm, EditServiceForm, WizardAddServiceForm
 
 router = Router()
+
+
+def _currency() -> str:
+    return get_currency_symbol()
 
 @router.message(F.text == "⚙️ Услуги")
 async def manage_services_handler(message: types.Message):
@@ -19,7 +25,7 @@ async def manage_services_handler(message: types.Message):
         text = f"📋 Услуги ({total} шт.) — страница 1:\n"
         for s in services[:20]:
             cat_info = f" ({s.get('category_name')})" if s.get('category_name') else ""
-            line = f"• {s['name']}{cat_info} — {s['price']}₽\n"
+            line = f"• {s['name']}{cat_info} — {s['price']}{_currency()}\n"
             if len(text) + len(line) > 3800:
                 text += "…\n"
                 break
@@ -54,7 +60,7 @@ async def edit_service_callback(callback: types.CallbackQuery, state: FSMContext
     
     cat_name = service.get('category_name')
     cat_info = f"\n📁 Категория: {cat_name}" if cat_name else "\n📁 Категория: Без категории"
-    text = f"⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}₽{cat_info}"
+    text = f"⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}{_currency()}{cat_info}"
     await callback.message.edit_text(text, reply_markup=keyboards.get_service_edit_keyboard(service))
 
 @router.callback_query(F.data == "back_to_services")
@@ -73,7 +79,7 @@ async def back_to_services_callback(callback: types.CallbackQuery, state: FSMCon
         text = f"📋 Услуги ({total} шт.) — страница {page + 1}:\n"
         for s in services[start:end]:
             cat_info = f" ({s.get('category_name')})" if s.get('category_name') else ""
-            line = f"• {s['name']}{cat_info} — {s['price']}₽\n"
+            line = f"• {s['name']}{cat_info} — {s['price']}{_currency()}\n"
             if len(text) + len(line) > 3800:
                 text += "…\n"
                 break
@@ -94,7 +100,7 @@ async def services_page_callback(callback: types.CallbackQuery):
     text = f"📋 Услуги ({total} шт.) — страница {page + 1}:\n"
     for s in services[start:end]:
         cat_info = f" ({s.get('category_name')})" if s.get('category_name') else ""
-        line = f"• {s['name']}{cat_info} — {s['price']}₽\n"
+        line = f"• {s['name']}{cat_info} — {s['price']}{_currency()}\n"
         if len(text) + len(line) > 3800:
             text += "…\n"
             break
@@ -120,7 +126,7 @@ async def process_edit_service_name(message: types.Message, state: FSMContext):
     service = await database.get_service_by_id(srv_id)
     cat_name = service.get('category_name')
     cat_info = f"\n📁 Категория: {cat_name}" if cat_name else "\n📁 Категория: Без категории"
-    text = f"✅ Название изменено!\n\n⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}₽{cat_info}"
+    text = f"✅ Название изменено!\n\n⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}{_currency()}{cat_info}"
     await message.answer(text, reply_markup=keyboards.get_service_edit_keyboard(service))
 
 @router.callback_query(F.data.startswith("eds_price_"))
@@ -141,7 +147,7 @@ async def process_edit_service_price(message: types.Message, state: FSMContext):
     service = await database.get_service_by_id(srv_id)
     cat_name = service.get('category_name')
     cat_info = f"\n📁 Категория: {cat_name}" if cat_name else "\n📁 Категория: Без категории"
-    text = f"✅ Цена изменена!\n\n⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}₽{cat_info}"
+    text = f"✅ Цена изменена!\n\n⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}{_currency()}{cat_info}"
     await message.answer(text, reply_markup=keyboards.get_service_edit_keyboard(service))
 
 @router.callback_query(F.data.startswith("eds_dur_"))
@@ -170,7 +176,7 @@ async def process_edit_service_duration(message: types.Message, state: FSMContex
     service = await database.get_service_by_id(srv_id)
     cat_name = service.get('category_name')
     cat_info = f"\n📁 Категория: {cat_name}" if cat_name else "\n📁 Категория: Без категории"
-    text = f"✅ Длительность изменена!\n\n⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}₽\n⏱ Длительность: {service.get('duration', duration)} м{cat_info}"
+    text = f"✅ Длительность изменена!\n\n⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}{_currency()}\n⏱ Длительность: {service.get('duration', duration)} м{cat_info}"
     await message.answer(text, reply_markup=keyboards.get_service_edit_keyboard(service))
 
 @router.callback_query(F.data.startswith("eds_cat_"))
@@ -199,7 +205,7 @@ async def process_edit_service_cat(callback: types.CallbackQuery, state: FSMCont
     service = await database.get_service_by_id(srv_id)
     cat_name = service.get('category_name')
     cat_info = f"\n📁 Категория: {cat_name}" if cat_name else "\n📁 Категория: Без категории"
-    text = f"✅ Категория изменена!\n\n⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}₽{cat_info}"
+    text = f"✅ Категория изменена!\n\n⚙️ Редактирование услуги:\n\n📝 Название: {service['name']}\n💸 Цена: {service['price']}{_currency()}{cat_info}"
     await callback.message.edit_text(text, reply_markup=keyboards.get_service_edit_keyboard(service))
 
 @router.message(F.text == "📁 Категории")

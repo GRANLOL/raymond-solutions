@@ -4,6 +4,7 @@ import os
 from collections import Counter
 from datetime import datetime
 
+from money import format_money
 from openpyxl import Workbook
 from openpyxl.cell.cell import MergedCell
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -32,6 +33,7 @@ THIN_BORDER = Border(
     top=Side(style="thin", color="E7BCCB"),
     bottom=Side(style="thin", color="E7BCCB"),
 )
+BOOKINGS_PAGE_SIZE = 10
 
 
 def _safe_parse_date(value: str) -> datetime | None:
@@ -95,7 +97,7 @@ def _build_bookings_workbook(file_path: str, bookings: list[tuple[str, str, str,
         ("Всего записей", len(bookings)),
         ("Период данных", f"{min_date} — {max_date}"),
         ("Уникальных телефонов", len({phone for _, phone, _, _, _ in bookings if phone})),
-        ("Сумма по записям", f"{sum(int(price or 0) for _, _, _, _, price in bookings):,} ₸"),
+        ("Сумма по записям", format_money(sum(int(price or 0) for _, _, _, _, price in bookings))),
     ]
 
     summary_ws["A1"] = "Экспорт записей"
@@ -113,11 +115,11 @@ def _build_bookings_workbook(file_path: str, bookings: list[tuple[str, str, str,
         label_cell.border = THIN_BORDER
         value_cell.border = THIN_BORDER
 
-    summary_ws["A9"] = "Что внутри"
-    summary_ws["A9"].font = Font(bold=True, color="6B2B43")
-    summary_ws["A10"] = "• Лист «Записи» — полный список клиентов"
-    summary_ws["A11"] = "• Лист «По дням» — количество записей по датам"
-    summary_ws.merge_cells("A9:B9")
+    summary_ws["A10"] = "Что внутри"
+    summary_ws["A10"].font = Font(bold=True, color="6B2B43")
+    summary_ws["A11"] = "• Лист «Записи» — полный список клиентов"
+    summary_ws["A12"] = "• Лист «По дням» — количество записей по датам"
+    summary_ws.merge_cells("A10:B10")
     _fit_columns(summary_ws)
 
     bookings_ws.append(["№", "Клиент / услуга", "Телефон", "Дата", "Время", "Цена"])
@@ -129,7 +131,7 @@ def _build_bookings_workbook(file_path: str, bookings: list[tuple[str, str, str,
     bookings_ws.freeze_panes = "A2"
     bookings_ws.auto_filter.ref = bookings_ws.dimensions
     for cell in bookings_ws["F"][1:]:
-        cell.number_format = '#,##0 "₸"'
+        cell.number_format = f'#,##0 "{salon_config.get("currency_symbol", "₸")}"'
     _fit_columns(bookings_ws)
 
     daily_ws.append(["Дата", "Количество записей"])
@@ -145,17 +147,50 @@ def _build_bookings_workbook(file_path: str, bookings: list[tuple[str, str, str,
     workbook.save(file_path)
 
 
-async def send_client_home(
-    message: types.Message,
-    *,
-    text: str,
-    is_admin: bool,
-) -> None:
+def _paginate(items, page: int, page_size: int = BOOKINGS_PAGE_SIZE):
+    total = len(items)
+    total_pages = max((total - 1) // page_size + 1, 1)
+    page = max(0, min(page, total_pages - 1))
+    start = page * page_size
+    end = start + page_size
+    return items[start:end], page, total_pages
+
+
+def _render_booking_page(bookings, title: str, page: int):
+    page_items, page, total_pages = _paginate(bookings, page)
+    lines = [f"{title}\n", f"Страница {page + 1} из {total_pages}\n"]
+    for idx, (_booking_id, name, phone, date, time, price) in enumerate(page_items, start=1 + page * BOOKINGS_PAGE_SIZE):
+        safe_name = escape(name)
+        safe_phone = escape(phone)
+        safe_date = escape(date)
+        safe_time = escape(time)
+        lines.append(f"<b>{idx}.</b> {safe_date} {safe_time} — {safe_name} ({safe_phone}), {escape(format_money(price))}")
+    if not page_items:
+        lines.append("Записей нет.")
+    return "\n".join(lines), page_items, page, total_pages
+
+
+async def _show_booking_list(message_or_callback, *, context: str, page: int = 0):
+    if context == "today":
+        today_str = datetime.now().strftime("%d.%m.%Y")
+        bookings = await database.get_bookings_by_date_detailed(today_str)
+        title = f"🗓 <b>Записи на сегодня ({today_str})</b>"
+    else:
+        bookings = await database.get_all_bookings_detailed()
+        title = "🗓 <b>Все записи</b>"
+
+    text, page_items, page, total_pages = _render_booking_page(bookings, title, page)
+    markup = keyboards.get_admin_booking_page_keyboard(page_items, context, page, total_pages)
+
+    if isinstance(message_or_callback, types.CallbackQuery):
+        await message_or_callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await message_or_callback.answer(text, parse_mode="HTML", reply_markup=markup)
+
+
+async def send_client_home(message: types.Message, *, text: str, is_admin: bool) -> None:
     await message.answer(text, reply_markup=keyboards.get_booking_launch_keyboard())
-    await message.answer(
-        "Меню клиента обновлено.",
-        reply_markup=keyboards.get_main_menu(is_admin=is_admin),
-    )
+    await message.answer("Меню клиента обновлено.", reply_markup=keyboards.get_main_menu(is_admin=is_admin))
 
 
 @router.message(Command("start"))
@@ -179,15 +214,9 @@ async def start_handler(message: types.Message):
 async def client_menu_handler(message: types.Message):
     admin_id = getenv("ADMIN_ID")
     is_admin = bool(admin_id and str(message.from_user.id) == admin_id)
-
     if not is_admin:
         return
-
-    await send_client_home(
-        message,
-        text="Вы переключились в главное меню клиента.",
-        is_admin=is_admin,
-    )
+    await send_client_home(message, text="Вы переключились в главное меню клиента.", is_admin=is_admin)
 
 
 @router.message(Command("admin"))
@@ -196,7 +225,6 @@ async def admin_handler(message: types.Message):
     admin_id = getenv("ADMIN_ID")
     if not admin_id or str(message.from_user.id) != admin_id:
         return
-
     await message.answer("Добро пожаловать в панель администратора!", reply_markup=keyboards.admin_menu)
 
 
@@ -205,13 +233,11 @@ async def back_to_admin_menu_callback(callback: types.CallbackQuery, state):
     admin_id = getenv("ADMIN_ID")
     if not admin_id or str(callback.from_user.id) != admin_id:
         return
-
     await state.clear()
     try:
         await callback.message.delete()
     except Exception:
         pass
-
     await callback.message.answer("Добро пожаловать в панель администратора!", reply_markup=keyboards.admin_menu)
 
 
@@ -220,9 +246,8 @@ async def cancel_admin_action_callback(callback: types.CallbackQuery, state):
     admin_id = getenv("ADMIN_ID")
     if not admin_id or str(callback.from_user.id) != admin_id:
         return
-
     await state.clear()
-    await callback.message.edit_text("Действие отменено.")
+    await callback.message.edit_text("Действие отменено.", reply_markup=keyboards.get_back_to_admin_menu_keyboard())
 
 
 @router.message(Command("export_excel"))
@@ -241,11 +266,7 @@ async def export_excel_handler(message: types.Message):
     _build_bookings_workbook(file_path, bookings)
 
     excel_file = FSInputFile(file_path)
-    caption = (
-        f"📃 Экспорт записей\n"
-        f"Салон: {salon_config.get('salon_name', 'Салон')}\n"
-        f"Всего записей: {len(bookings)}"
-    )
+    caption = f"📃 Экспорт записей\nСалон: {salon_config.get('salon_name', 'Салон')}\nВсего записей: {len(bookings)}"
     await message.answer_document(excel_file, caption=caption)
     os.remove(file_path)
 
@@ -255,21 +276,7 @@ async def view_all_handler(message: types.Message):
     admin_id = getenv("ADMIN_ID")
     if not admin_id or str(message.from_user.id) != admin_id:
         return
-
-    bookings = await database.get_all_bookings()
-    if not bookings:
-        await message.answer("Пока нет ни одной записи.")
-        return
-
-    text = "🗓 <b>Все записи:</b>\n\n"
-    for idx, (name, phone, date, time, price) in enumerate(bookings, 1):
-        safe_name = escape(name)
-        safe_phone = escape(phone)
-        safe_date = escape(date)
-        safe_time = escape(time)
-        text += f"<b>{idx}.</b> {safe_date} в {safe_time} — {safe_name} ({safe_phone}), {int(price or 0)} ₸\n"
-
-    await message.answer(text, parse_mode="HTML")
+    await _show_booking_list(message, context="all", page=0)
 
 
 @router.message(F.text == "🗓 На сегодня")
@@ -277,18 +284,49 @@ async def todays_bookings_handler(message: types.Message):
     admin_id = getenv("ADMIN_ID")
     if not admin_id or str(message.from_user.id) != admin_id:
         return
+    await _show_booking_list(message, context="today", page=0)
 
-    today_str = datetime.now().strftime("%d.%m.%Y")
-    bookings = await database.get_bookings_by_date_full(today_str)
-    if not bookings:
-        await message.answer(f"На сегодня ({today_str}) записей нет.")
+
+@router.callback_query(F.data.startswith("bookings_page_"))
+async def bookings_page_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
         return
+    _, _, context, page_str = callback.data.split("_", 3)
+    await _show_booking_list(callback, context=context, page=int(page_str))
 
-    text = f"🗓 <b>Записи на сегодня ({today_str}):</b>\n\n"
-    for idx, (name, phone, _date, time, price) in enumerate(bookings, 1):
-        safe_name = escape(name)
-        safe_phone = escape(phone)
-        safe_time = escape(time)
-        text += f"<b>{idx}.</b> {safe_time} — {safe_name} ({safe_phone}), {int(price or 0)} ₸\n"
 
-    await message.answer(text, parse_mode="HTML")
+@router.callback_query(F.data.startswith("booking_actions_"))
+async def booking_actions_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    _, _, context, page_str, booking_id_str = callback.data.split("_", 4)
+    booking = await database.get_booking_record_by_id(int(booking_id_str))
+    if not booking:
+        await callback.answer("Запись не найдена", show_alert=True)
+        return
+    booking_id, _user_id, name, phone, date, time, _master_id = booking
+    text = (
+        "Действия по записи:\n\n"
+        f"Клиент: {escape(name)}\n"
+        f"Телефон: {escape(phone)}\n"
+        f"Дата: {escape(date)}\n"
+        f"Время: {escape(time)}"
+    )
+    await callback.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=keyboards.get_admin_booking_actions_keyboard(booking_id, phone, context, int(page_str)),
+    )
+
+
+@router.callback_query(F.data.startswith("admin_cancel_booking_"))
+async def admin_cancel_booking_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    _, _, _, booking_id_str, context, page_str = callback.data.split("_", 5)
+    await database.delete_booking_by_id(int(booking_id_str))
+    await callback.answer("Запись отменена")
+    await _show_booking_list(callback, context=context, page=int(page_str))

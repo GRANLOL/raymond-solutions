@@ -69,6 +69,9 @@ export async function fetchContent() {
             if (data.timezone_offset !== undefined) {
                 store.timezoneOffset = data.timezone_offset;
             }
+            if (data.currency_symbol) {
+                store.currencySymbol = data.currency_symbol;
+            }
         }
     } catch (e) {
         console.error("Error fetching available content:", e);
@@ -78,5 +81,6 @@ export async function fetchContent() {
         store.dynamicBookingWindow = 7;
         store.workingDays = [1, 2, 3, 4, 5, 6, 0];
         store.blacklistedDates = [];
+        store.currencySymbol = '₸';
     }
 }
