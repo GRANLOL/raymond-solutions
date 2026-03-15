@@ -22,13 +22,11 @@ class AppSmokeTests(unittest.IsolatedAsyncioTestCase):
     async def test_get_content_returns_expected_shape(self):
         with patch.object(main, "require_webapp_auth"), \
              patch.object(main, "get_all_services", AsyncMock(return_value=[{"id": 1}])), \
-             patch.object(main, "get_all_categories", AsyncMock(return_value=[{"id": 2}])), \
-             patch.object(main, "get_all_masters", AsyncMock(return_value=[{"id": 3}])):
+             patch.object(main, "get_all_categories", AsyncMock(return_value=[{"id": 2}])):
             content = await main.get_content("init-data")
 
         self.assertIn("services", content)
         self.assertIn("categories", content)
-        self.assertIn("masters", content)
         self.assertIn("booking_window", content)
 
     async def test_create_booking_returns_success_payload(self):
@@ -42,7 +40,6 @@ class AppSmokeTests(unittest.IsolatedAsyncioTestCase):
                  "phone": "+7 (777) 777-77-77",
                  "name": "Alice",
                  "price": 2500,
-                 "master_id": None,
              }, None))), \
              patch.object(main, "create_booking_and_notify", AsyncMock(return_value=(True, "ok"))):
             payload = await main.create_booking({"service": "Маникюр"}, "init-data")

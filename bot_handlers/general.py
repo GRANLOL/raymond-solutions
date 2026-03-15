@@ -39,17 +39,6 @@ async def start_handler(message: types.Message):
     admin_id = getenv("ADMIN_ID")
     is_admin = bool(admin_id and str(message.from_user.id) == admin_id)
 
-    use_masters = salon_config.get("use_masters", False)
-    is_master = False
-
-    if use_masters:
-        master = await database.get_master_by_telegram_id(str(message.from_user.id))
-        is_master = bool(master)
-
-    if is_master and not is_admin:
-        await message.answer("Добро пожаловать в панель мастера!", reply_markup=keyboards.master_menu)
-        return
-
     if is_admin:
         await message.answer("Добро пожаловать в панель администратора!", reply_markup=keyboards.admin_menu)
         return
@@ -58,7 +47,7 @@ async def start_handler(message: types.Message):
         message,
         text=salon_config.get("welcome_text", "Привет! Выберите нужное действие:"),
         is_admin=is_admin,
-        is_master=is_master,
+        is_master=False,
     )
 
 
@@ -68,20 +57,14 @@ async def client_menu_handler(message: types.Message):
     admin_id = getenv("ADMIN_ID")
     is_admin = bool(admin_id and str(message.from_user.id) == admin_id)
 
-    use_masters = salon_config.get("use_masters", False)
-    is_master = False
-    if use_masters:
-        master = await database.get_master_by_telegram_id(str(message.from_user.id))
-        is_master = bool(master)
-
-    if not is_admin and not is_master:
+    if not is_admin:
         return
 
     await send_client_home(
         message,
         text="Вы переключились в главное меню клиента.",
         is_admin=is_admin,
-        is_master=is_master,
+        is_master=False,
     )
 
 
@@ -121,7 +104,7 @@ async def cancel_admin_action_callback(callback: types.CallbackQuery, state):
 
 
 @router.message(Command("export_excel"))
-@router.message(F.text == "📁 Excel")
+@router.message(F.text == "📃 Excel")
 async def export_excel_handler(message: types.Message):
     admin_id = getenv("ADMIN_ID")
     if not admin_id or str(message.from_user.id) != admin_id:
@@ -137,7 +120,7 @@ async def export_excel_handler(message: types.Message):
     df.to_excel(file_path, index=False)
 
     excel_file = FSInputFile(file_path)
-    await message.answer_document(excel_file, caption="📁 Ваши записи")
+    await message.answer_document(excel_file, caption="📃 Ваши записи")
     os.remove(file_path)
 
 
@@ -152,16 +135,13 @@ async def view_all_handler(message: types.Message):
         await message.answer("Пока нет ни одной записи.")
         return
 
-    use_masters = salon_config.get("use_masters", False)
     text = "🗓 <b>Все записи:</b>\n\n"
-    for idx, (name, phone, date, time, master_name) in enumerate(bookings, 1):
+    for idx, (name, phone, date, time, _master_name) in enumerate(bookings, 1):
         safe_name = escape(name)
         safe_phone = escape(phone)
         safe_date = escape(date)
         safe_time = escape(time)
-        safe_master = escape(master_name) if master_name else ""
-        master_str = f" [Мастер: {safe_master}]" if use_masters and master_name else ""
-        text += f"<b>{idx}.</b> {safe_date} в {safe_time} — {safe_name} ({safe_phone}){master_str}\n"
+        text += f"<b>{idx}.</b> {safe_date} в {safe_time} — {safe_name} ({safe_phone})\n"
 
     await message.answer(text, parse_mode="HTML")
 
@@ -178,14 +158,11 @@ async def todays_bookings_handler(message: types.Message):
         await message.answer(f"На сегодня ({today_str}) записей нет.")
         return
 
-    use_masters = salon_config.get("use_masters", False)
     text = f"🗓 <b>Записи на сегодня ({today_str}):</b>\n\n"
-    for idx, (name, phone, date, time, master_name) in enumerate(bookings, 1):
+    for idx, (name, phone, _date, time, _master_name) in enumerate(bookings, 1):
         safe_name = escape(name)
         safe_phone = escape(phone)
         safe_time = escape(time)
-        safe_master = escape(master_name) if master_name else ""
-        master_str = f" [Мастер: {safe_master}]" if use_masters and master_name else ""
-        text += f"<b>{idx}.</b> {safe_time} — {safe_name} ({safe_phone}){master_str}\n"
+        text += f"<b>{idx}.</b> {safe_time} — {safe_name} ({safe_phone})\n"
 
     await message.answer(text, parse_mode="HTML")

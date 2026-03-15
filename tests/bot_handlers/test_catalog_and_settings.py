@@ -93,29 +93,6 @@ class CatalogHandlerTests(unittest.IsolatedAsyncioTestCase):
 
 
 class SettingsHandlerTests(unittest.IsolatedAsyncioTestCase):
-    async def test_manage_masters_callback_opens_masters_list(self):
-        callback = make_callback(data="manage_masters", user_id=1)
-        masters = [{"id": 1, "name": "Anna"}]
-
-        with patch.object(settings_handlers, "getenv", return_value="1"), \
-             patch.object(settings_handlers.database, "get_all_masters", return_value=masters), \
-             patch.object(settings_handlers.keyboards, "get_masters_keyboard", return_value="kb"):
-            await settings_handlers.manage_masters_callback(callback)
-
-        callback.message.edit_text.assert_awaited_once_with("Управление мастерами:", reply_markup="kb")
-
-    async def test_toggle_use_masters_updates_config_and_markup(self):
-        callback = make_callback(data="toggle_use_masters", user_id=1)
-
-        with patch.object(settings_handlers, "getenv", return_value="1"), \
-             patch.dict(settings_handlers.salon_config, {"use_masters": False}, clear=False), \
-             patch.object(settings_handlers, "update_config") as update_mock, \
-             patch.object(settings_handlers.keyboards, "get_system_settings_keyboard", return_value="kb"):
-            await settings_handlers.toggle_use_masters_callback(callback)
-
-        update_mock.assert_called_once_with("use_masters", True)
-        callback.message.edit_reply_markup.assert_awaited_once_with(reply_markup="kb")
-
     async def test_process_rem_time_2_rejects_invalid_hours(self):
         message = make_message(text="0")
         state = make_state()
@@ -131,7 +108,6 @@ class SettingsHandlerTests(unittest.IsolatedAsyncioTestCase):
         state = make_state()
 
         with patch.object(settings_handlers, "update_config") as update_mock, \
-             patch.dict(settings_handlers.salon_config, {"use_masters": True}, clear=False), \
              patch.object(settings_handlers.keyboards, "get_system_settings_keyboard", return_value="kb"):
             await settings_handlers.process_timezone_offset(message, state)
 

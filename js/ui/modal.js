@@ -22,24 +22,13 @@ export function showModal() {
     const nameInput = document.getElementById('name-input');
     const phoneInput = document.getElementById('phone-input');
 
-    // Async execution to let Telegram MainButton press animation finish before rendering
     setTimeout(() => {
-        // Populate Modal Info
         modalService.textContent = store.selectedService;
-        const mr = document.getElementById('modal-master-row');
-        if (store.useMasters && store.selectedMaster) {
-            document.getElementById('modal-master').textContent = store.selectedMaster.name;
-            mr.style.display = 'block';
-        } else {
-            mr.style.display = 'none';
-        }
-
         modalDate.textContent = store.selectedDate;
         modalTime.textContent = store.selectedTime;
         modalName.textContent = nameInput.value.trim();
         modalPhone.textContent = phoneInput.value;
 
-        // Show Modal
         modal.classList.add('active');
         tg.MainButton.hide();
     }, 0);

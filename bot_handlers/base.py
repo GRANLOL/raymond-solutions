@@ -24,14 +24,7 @@ from config import salon_config, update_config
 async def get_user_roles(user_id: int) -> tuple[bool, bool]:
     admin_id = getenv("ADMIN_ID")
     is_admin = bool(admin_id and str(user_id) == admin_id)
-
-    use_masters = salon_config.get("use_masters", False)
-    is_master = False
-    if use_masters:
-        master = await database.get_master_by_telegram_id(str(user_id))
-        is_master = bool(master)
-
-    return is_admin, is_master
+    return is_admin, False
 
 
 def is_admin(user_id: int) -> bool:

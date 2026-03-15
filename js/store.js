@@ -9,9 +9,6 @@ export const store = {
     busySlots: {},
     dynamicServices: [],
     dynamicCategories: [],
-    dynamicMasters: [],
-    useMasters: false,
-    selectedMaster: null,
     dynamicBookingWindow: 7,
     workingDays: [1, 2, 3, 4, 5, 6, 0],
     blacklistedDates: [],
@@ -19,8 +16,7 @@ export const store = {
     scheduleInterval: 30,
     selectedDuration: 60,
     timezoneOffset: 3,
-    blacklistedDates: [],
     months: ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"],
     shortMonths: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"],
-    days: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
+    days: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"],
 };

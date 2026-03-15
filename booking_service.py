@@ -1,6 +1,6 @@
-from os import getenv
 from html import escape
 import logging
+from os import getenv
 
 from aiogram import types
 
@@ -22,7 +22,6 @@ async def create_booking_and_notify(
     phone: str,
     name: str,
     price: int,
-    master_id: int | None,
 ) -> tuple[bool, str]:
     full_name_service = f"{name} ({service})" if name else f"{user_full_name} ({service})"
 
@@ -32,7 +31,7 @@ async def create_booking_and_notify(
         phone=phone,
         date=date,
         time=time,
-        master_id=master_id,
+        master_id=None,
         duration=duration,
         service_name=service,
         price=price,
@@ -41,7 +40,7 @@ async def create_booking_and_notify(
         return False, "Выбранный слот уже заняли. Обновите форму и выберите другое время."
 
     msg_text = (
-        f"🔔 НОВАЯ ЗАПИСЬ!\n\n"
+        "🔔 НОВАЯ ЗАПИСЬ!\n\n"
         f"👤 Клиент: {full_name_service}\n"
         f"📞 Тел: {phone}\n"
         f"📅 Дата: {date}\n"
@@ -54,21 +53,13 @@ async def create_booking_and_notify(
         except Exception:
             logger.exception("Failed to send booking notification to admin", extra={"admin_id": admin_id})
 
-    if master_id and bot is not None:
-        try:
-            master = await database.get_master_by_id(master_id)
-            if master and master.get("telegram_id"):
-                await bot.send_message(master["telegram_id"], msg_text)
-        except Exception:
-            logger.exception("Failed to send booking notification to master", extra={"master_id": master_id})
-
     return True, (
-        f"✅ Запись подтверждена!\n\n"
+        "✅ Запись подтверждена!\n\n"
         f"Услуга: {service}\n"
         f"📅 Дата: {date}\n"
         f"⏰ Время: {time}\n"
         f"📞 Телефон: {phone}\n\n"
-        f"Ждем вас!"
+        "Ждем вас!"
     )
 
 
@@ -82,9 +73,7 @@ async def finalize_web_booking(
     phone: str,
     name: str,
     price: int,
-    master_id: int | None,
     is_admin: bool,
-    is_master: bool,
 ) -> None:
     success, result_text = await create_booking_and_notify(
         bot=message.bot,
@@ -97,7 +86,6 @@ async def finalize_web_booking(
         phone=phone,
         name=name,
         price=price,
-        master_id=master_id,
     )
     if not success:
         await message.answer(result_text)
@@ -106,10 +94,7 @@ async def finalize_web_booking(
     remove_msg = await message.answer("⏳ Загрузка...", reply_markup=types.ReplyKeyboardRemove())
     await remove_msg.delete()
 
-    await message.answer(
-        result_text,
-        reply_markup=keyboards.get_main_menu(is_admin=is_admin, is_master=is_master),
-    )
+    await message.answer(result_text, reply_markup=keyboards.get_main_menu(is_admin=is_admin))
 
 
 def format_user_booking_text(name: str, phone: str, date: str, time: str) -> str:
@@ -125,22 +110,28 @@ def format_user_booking_text(name: str, phone: str, date: str, time: str) -> str
     return text
 
 
-async def cancel_booking_and_notify(callback: types.CallbackQuery, *, booking_id: int, name: str, phone: str, date: str, time: str, master_id: int | None) -> None:
+async def cancel_booking_and_notify(
+    callback: types.CallbackQuery,
+    *,
+    booking_id: int,
+    name: str,
+    phone: str,
+    date: str,
+    time: str,
+) -> None:
     await database.delete_booking_by_id(booking_id)
     await callback.message.edit_text("✅ Ваша запись успешно отменена.")
 
-    msg_text = f"⚠️ ОТМЕНА ЗАПИСИ\n\nКлиент: {name}\nДата: {date}\nВремя: {time}\nТелефон: {phone}"
+    msg_text = (
+        "⚠️ ОТМЕНА ЗАПИСИ\n\n"
+        f"Клиент: {name}\n"
+        f"Дата: {date}\n"
+        f"Время: {time}\n"
+        f"Телефон: {phone}"
+    )
     admin_id = getenv("ADMIN_ID")
     if admin_id:
         try:
             await callback.bot.send_message(admin_id, msg_text)
         except Exception:
             logger.exception("Failed to send cancellation notification to admin", extra={"admin_id": admin_id})
-
-    if master_id:
-        try:
-            master = await database.get_master_by_id(master_id)
-            if master and master.get("telegram_id"):
-                await callback.bot.send_message(master["telegram_id"], msg_text)
-        except Exception:
-            logger.exception("Failed to send cancellation notification to master", extra={"master_id": master_id})

@@ -27,7 +27,9 @@ async function postBooking(data) {
 
 export async function submitData() {
     tg.HapticFeedback.impactOccurred('medium');
-    if (!store.selectedService || !store.selectedDate || !store.selectedTime) return;
+    if (!store.selectedService || !store.selectedDate || !store.selectedTime) {
+        return;
+    }
 
     tg.MainButton.showProgress();
     const modalSubmit = document.getElementById('modal-submit');
@@ -51,10 +53,6 @@ export async function submitData() {
         phone: phoneInput.value,
         name: nameInput.value.trim(),
     };
-
-    if (store.useMasters && store.selectedMaster) {
-        data.master_id = store.selectedMaster.id;
-    }
 
     try {
         await postBooking(data);

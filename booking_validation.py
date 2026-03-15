@@ -59,21 +59,7 @@ async def validate_web_booking(data: dict) -> tuple[dict | None, str | None]:
 
     duration = int(service.get("duration") or 60)
     price = int(service.get("price_value") or 0)
-
-    use_masters = salon_config.get("use_masters", False)
     master_id = None
-    if use_masters:
-        master_id_raw = data.get("master_id")
-        if master_id_raw in (None, ""):
-            return None, "Сначала выберите мастера."
-        try:
-            master_id = int(master_id_raw)
-        except (TypeError, ValueError):
-            return None, "Передан некорректный мастер. Выберите мастера заново."
-
-        master = await database.get_master_by_id(master_id)
-        if not master:
-            return None, "Выбранный мастер больше недоступен. Обновите форму и попробуйте снова."
 
     try:
         booking_date = datetime.strptime(date_str, "%d.%m.%Y").date()

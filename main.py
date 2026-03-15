@@ -8,7 +8,7 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from config import BOT_TOKEN, WEBAPP_AUTH_REQUIRED, WEBAPP_URL, salon_config
-from database import init_db, get_all_busy_slots, get_all_services, get_all_categories, get_all_masters
+from database import init_db, get_all_busy_slots, get_all_services, get_all_categories
 from bot_handlers import router
 from booking_service import create_booking_and_notify
 from booking_validation import validate_web_booking
@@ -45,9 +45,9 @@ def require_webapp_auth(x_telegram_init_data: str | None) -> None:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
 @app.get("/api/busy-slots")
-async def get_busy_slots(master_id: int = None, x_telegram_init_data: str | None = Header(default=None)) -> dict:
+async def get_busy_slots(x_telegram_init_data: str | None = Header(default=None)) -> dict:
     require_webapp_auth(x_telegram_init_data)
-    busy_slots = await get_all_busy_slots(master_id)
+    busy_slots = await get_all_busy_slots()
     return busy_slots if busy_slots else {}
 
 @app.get("/api/get-content")
@@ -55,8 +55,6 @@ async def get_content(x_telegram_init_data: str | None = Header(default=None)) -
     require_webapp_auth(x_telegram_init_data)
     services = await get_all_services()
     categories = await get_all_categories()
-    masters = await get_all_masters()
-    use_masters = salon_config.get("use_masters", False)
     booking_window = salon_config.get("booking_window", 7)
     working_days = salon_config.get("working_days", [1, 2, 3, 4, 5, 6, 0])
     blacklisted_dates = salon_config.get("blacklisted_dates", [])
@@ -67,8 +65,6 @@ async def get_content(x_telegram_init_data: str | None = Header(default=None)) -
     return {
         "services": services,
         "categories": categories,
-        "masters": masters,
-        "use_masters": use_masters,
         "booking_window": booking_window,
         "working_days": working_days,
         "blacklisted_dates": blacklisted_dates,
@@ -100,7 +96,6 @@ async def create_booking(payload: dict, x_telegram_init_data: str | None = Heade
         phone=validated["phone"],
         name=validated["name"],
         price=validated["price"],
-        master_id=validated["master_id"],
     )
     if not success:
         raise HTTPException(status_code=409, detail=message)

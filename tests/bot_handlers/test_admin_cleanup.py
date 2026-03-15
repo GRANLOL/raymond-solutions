@@ -30,8 +30,7 @@ class AdminCleanupMoreTests(unittest.IsolatedAsyncioTestCase):
         message = make_message(user_id=1)
 
         with patch.object(admin_cleanup_handlers, "getenv", return_value="1"), \
-             patch.object(admin_cleanup_handlers.keyboards, "get_clear_options_keyboard", return_value="kb"), \
-             patch.dict(admin_cleanup_handlers.salon_config, {"use_masters": True}, clear=False):
+             patch.object(admin_cleanup_handlers.keyboards, "get_clear_options_keyboard", return_value="kb"):
             await admin_cleanup_handlers.clear_bookings_handler(message)
 
         message.answer.assert_awaited_once_with(ANY, reply_markup="kb")

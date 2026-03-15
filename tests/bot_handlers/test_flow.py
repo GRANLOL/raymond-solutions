@@ -3,7 +3,6 @@ from types import SimpleNamespace
 from unittest.mock import ANY, AsyncMock, patch
 
 import booking_service
-import bot_handlers.admin_cleanup as admin_cleanup_handlers
 import bot_handlers.client as client_handlers
 import bot_handlers.reminders as reminder_handlers
 from tests.support import make_callback, make_message, make_state
@@ -30,7 +29,6 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
                 "time": "10:00",
                 "phone": "+10000000000",
                 "name": "Alice",
-                "master_id": 7,
             },
         )
         state = make_state()
@@ -42,13 +40,10 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
             "phone": "+10000000000",
             "name": "Alice",
             "price": 2500,
-            "master_id": 7,
         }
 
         with patch.object(client_handlers, "service_validate_web_booking", AsyncMock(return_value=(validated, None))), \
-             patch.object(client_handlers.database, "get_master_by_telegram_id", AsyncMock(return_value={"id": 7})), \
-             patch.object(client_handlers, "finalize_web_booking", AsyncMock()) as finalize_mock, \
-             patch.dict(client_handlers.salon_config, {"use_masters": True}, clear=False):
+             patch.object(client_handlers, "finalize_web_booking", AsyncMock()) as finalize_mock:
             await client_handlers.process_web_app_data(message, state)
 
         finalize_mock.assert_awaited_once_with(
@@ -60,9 +55,7 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
             phone="+10000000000",
             name="Alice",
             price=2500,
-            master_id=7,
             is_admin=False,
-            is_master=True,
         )
         state.clear.assert_awaited_once()
 
@@ -81,8 +74,8 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
     async def test_my_bookings_handler_sends_each_booking_with_cancel_keyboard(self):
         message = make_message(user_id=55)
         bookings = [
-            (101, "Alice", "+100", "14.03.2026", "10:00", 1),
-            (102, "Bob", "+200", "15.03.2026", "11:00", 2),
+            (101, "Alice", "+100", "14.03.2026", "10:00", None),
+            (102, "Bob", "+200", "15.03.2026", "11:00", None),
         ]
 
         with patch.object(client_handlers.database, "get_user_bookings", AsyncMock(return_value=bookings)), \
@@ -147,21 +140,18 @@ class BookingServiceTests(unittest.IsolatedAsyncioTestCase):
                 phone="+100",
                 name="Alice",
                 price=2500,
-                master_id=None,
                 is_admin=False,
-                is_master=False,
             )
 
         message.answer.assert_awaited_once_with(ANY)
         message.bot.send_message.assert_not_awaited()
 
-    async def test_finalize_web_booking_sends_notifications_on_success(self):
+    async def test_finalize_web_booking_sends_admin_notification_on_success(self):
         remove_message = SimpleNamespace(delete=AsyncMock())
         message = make_message(user_id=5, full_name="Alice")
         message.answer = AsyncMock(side_effect=[remove_message, None])
 
         with patch.object(booking_service.database, "create_booking_if_available", AsyncMock(return_value=True)), \
-             patch.object(booking_service.database, "get_master_by_id", AsyncMock(return_value={"telegram_id": "42"})), \
              patch.object(booking_service.keyboards, "get_main_menu", return_value="menu"), \
              patch.object(booking_service, "getenv", return_value="777"):
             await booking_service.finalize_web_booking(
@@ -173,14 +163,12 @@ class BookingServiceTests(unittest.IsolatedAsyncioTestCase):
                 phone="+100",
                 name="Alice",
                 price=2500,
-                master_id=9,
                 is_admin=False,
-                is_master=False,
             )
 
         self.assertEqual(message.answer.await_count, 2)
         remove_message.delete.assert_awaited_once()
-        self.assertEqual(message.bot.send_message.await_count, 2)
+        message.bot.send_message.assert_awaited_once()
 
 
 class CancelBookingHandlerTests(unittest.IsolatedAsyncioTestCase):
@@ -193,7 +181,7 @@ class CancelBookingHandlerTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_cancel_booking_callback_uses_explicit_booking_and_calls_service(self):
         callback = make_callback(data="cancel_1_55", user_id=1)
-        booking = (55, 1, "Alice", "+100", "14.03.2026", "10:00", 7)
+        booking = (55, 1, "Alice", "+100", "14.03.2026", "10:00", None)
 
         with patch.object(client_handlers.database, "get_booking_record_by_id", AsyncMock(return_value=booking)), \
              patch.object(client_handlers, "cancel_booking_and_notify", AsyncMock()) as cancel_mock:
@@ -206,5 +194,4 @@ class CancelBookingHandlerTests(unittest.IsolatedAsyncioTestCase):
             phone="+100",
             date="14.03.2026",
             time="10:00",
-            master_id=7,
         )
