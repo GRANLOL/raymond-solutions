@@ -9,6 +9,7 @@ from openpyxl import Workbook
 from openpyxl.cell.cell import MergedCell
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+from .states import SearchBookingForm
 
 from .base import (
     Command,
@@ -40,6 +41,7 @@ def _status_label(status: str) -> str:
     return {
         "scheduled": "Активна",
         "completed": "Выполнена",
+        "no_show": "Не пришел",
         "cancelled": "Отменена",
     }.get(status, status)
 
@@ -170,6 +172,7 @@ def _render_booking_page(bookings, title: str, page: int):
         status_badge = {
             "scheduled": "🟢 Активна",
             "completed": "✅ Выполнена",
+            "no_show": "🟠 Не пришел",
             "cancelled": "❌ Отменена",
         }.get(status, escape(_status_label(status)))
         lines.append(
@@ -316,6 +319,46 @@ async def todays_bookings_handler(message: types.Message):
     await _show_booking_list(message, context="today", page=0)
 
 
+@router.message(F.text == "🔎 Поиск")
+async def search_bookings_handler(message: types.Message, state):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(message.from_user.id) != admin_id:
+        return
+    await state.set_state(SearchBookingForm.query)
+    await message.answer(
+        "🔎 <b>Поиск записи</b>\n\nВведите имя, телефон, дату или время. Например: <code>777</code> или <code>21.03.2026</code>.",
+        parse_mode="HTML",
+    )
+
+
+@router.message(SearchBookingForm.query)
+async def process_booking_search(message: types.Message, state):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(message.from_user.id) != admin_id:
+        return
+
+    query = (message.text or "").strip()
+    if len(query) < 2:
+        await message.answer("Введите хотя бы 2 символа для поиска.")
+        return
+
+    results = await database.search_bookings(query, limit=10)
+    await state.clear()
+    if not results:
+        await message.answer("🔎 <b>Ничего не найдено</b>\n\nПопробуйте другой запрос.", parse_mode="HTML")
+        return
+
+    lines = [f"🔎 <b>Результаты поиска</b>", f"<i>Запрос: {escape(query)}</i>", ""]
+    for booking_id, name, phone, date, time, status in results:
+        lines.append(
+            f"<b>#{booking_id}</b> {escape(name)}\n"
+            f"Статус: {escape(_status_label(status))}\n"
+            f"Когда: {escape(date)} в {escape(time)}\n"
+            f"Телефон: {escape(phone)}\n"
+        )
+    await message.answer("\n".join(lines), parse_mode="HTML")
+
+
 @router.callback_query(F.data.startswith("bookings_page_"))
 async def bookings_page_callback(callback: types.CallbackQuery):
     admin_id = getenv("ADMIN_ID")
@@ -374,7 +417,13 @@ async def admin_booking_status_callback(callback: types.CallbackQuery):
     admin_id = getenv("ADMIN_ID")
     if not admin_id or str(callback.from_user.id) != admin_id:
         return
-    _, _, _, booking_id_str, status, context, page_str = callback.data.split("_", 6)
+
+    prefix = "admin_booking_status_"
+    payload = callback.data[len(prefix):]
+    first_separator = payload.find("_")
+    booking_id_str = payload[:first_separator]
+    status, context, page_str = payload[first_separator + 1 :].rsplit("_", 2)
+
     await database.update_booking_status(int(booking_id_str), status)
     await callback.answer("Статус обновлен")
     await _show_booking_list(callback, context=context, page=int(page_str))

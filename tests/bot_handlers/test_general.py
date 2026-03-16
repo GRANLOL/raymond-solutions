@@ -80,6 +80,17 @@ class GeneralHandlerTests(unittest.IsolatedAsyncioTestCase):
         callback.answer.assert_awaited_once_with(ANY)
         show_mock.assert_awaited_once_with(callback, context="today", page=0)
 
+    async def test_admin_booking_status_callback_handles_no_show_status(self):
+        callback = make_callback(data="admin_booking_status_15_no_show_all_0", user_id=1)
+
+        with patch.object(general_handlers, "getenv", return_value="1"), \
+             patch.object(general_handlers.database, "update_booking_status", AsyncMock()) as update_mock, \
+             patch.object(general_handlers, "_show_booking_list", AsyncMock()) as show_mock:
+            await general_handlers.admin_booking_status_callback(callback)
+
+        update_mock.assert_awaited_once_with(15, "no_show")
+        show_mock.assert_awaited_once_with(callback, context="all", page=0)
+
     async def test_back_to_admin_menu_clears_state(self):
         callback = make_callback(data="back_to_admin_menu", user_id=1)
         state = make_state()
@@ -88,3 +99,25 @@ class GeneralHandlerTests(unittest.IsolatedAsyncioTestCase):
             await general_handlers.back_to_admin_menu_callback(callback, state)
 
         state.clear.assert_awaited_once()
+
+    async def test_search_bookings_handler_sets_state_for_admin(self):
+        message = make_message(user_id=1, text="🔎 Поиск")
+        state = make_state()
+
+        with patch.object(general_handlers, "getenv", return_value="1"):
+            await general_handlers.search_bookings_handler(message, state)
+
+        state.set_state.assert_awaited_once()
+        message.answer.assert_awaited_once_with(ANY, parse_mode="HTML")
+
+    async def test_process_booking_search_renders_results(self):
+        message = make_message(user_id=1, text="Alice")
+        state = make_state()
+        results = [(15, "Alice", "+100", "14.03.2026", "10:00", "no_show")]
+
+        with patch.object(general_handlers, "getenv", return_value="1"), \
+             patch.object(general_handlers.database, "search_bookings", AsyncMock(return_value=results)):
+            await general_handlers.process_booking_search(message, state)
+
+        state.clear.assert_awaited_once()
+        message.answer.assert_awaited_once_with(ANY, parse_mode="HTML")
