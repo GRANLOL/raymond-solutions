@@ -124,16 +124,31 @@ def get_admin_booking_page_keyboard(bookings, context: str, page: int, total_pag
     return builder.as_markup()
 
 
-def get_admin_booking_actions_keyboard(booking_id: int, phone: str, context: str, page: int):
+def get_admin_booking_actions_keyboard(
+    booking_id: int,
+    phone: str,
+    context: str,
+    page: int,
+    *,
+    telegram_user_id: int | None = None,
+):
     from aiogram.utils.keyboard import InlineKeyboardBuilder
 
     builder = InlineKeyboardBuilder()
     digits = _normalize_phone(phone)
+
+    contact_buttons = []
+    if telegram_user_id:
+        contact_buttons.append(InlineKeyboardButton(text="💬 Написать", url=f"tg://user?id={telegram_user_id}"))
+    elif digits:
+        contact_buttons.append(InlineKeyboardButton(text="💬 Написать", url=f"https://wa.me/{digits}"))
+
     if digits:
-        builder.row(
-            InlineKeyboardButton(text="💬 Написать", url=f"https://wa.me/{digits}"),
-            InlineKeyboardButton(text="📞 Показать номер", callback_data=f"show_phone_{digits}"),
-        )
+        contact_buttons.append(InlineKeyboardButton(text="📞 Показать номер", callback_data=f"show_phone_{digits}"))
+
+    if contact_buttons:
+        builder.row(*contact_buttons)
+
     builder.row(InlineKeyboardButton(text="❌ Отменить запись", callback_data=f"admin_cancel_booking_{booking_id}_{context}_{page}"))
     builder.row(InlineKeyboardButton(text="◀️ Назад к списку", callback_data=f"bookings_page_{context}_{page}"))
     return builder.as_markup()

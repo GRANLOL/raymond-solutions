@@ -41,3 +41,16 @@ class KeyboardTests(unittest.TestCase):
         button = markup.inline_keyboard[0][0]
 
         self.assertIsNotNone(button.web_app)
+
+    def test_admin_booking_actions_prefers_telegram_link_when_user_id_exists(self):
+        markup = common_keyboards.get_admin_booking_actions_keyboard(
+            10,
+            "+7 (777) 123-45-67",
+            "today",
+            0,
+            telegram_user_id=123456789,
+        )
+
+        first_row = markup.inline_keyboard[0]
+        self.assertEqual(first_row[0].url, "tg://user?id=123456789")
+        self.assertEqual(first_row[1].callback_data, "show_phone_77771234567")

@@ -308,7 +308,7 @@ async def booking_actions_callback(callback: types.CallbackQuery):
     if not booking:
         await callback.answer("Запись не найдена", show_alert=True)
         return
-    booking_id, _user_id, name, phone, date, time, _master_id = booking
+    booking_id, user_id, name, phone, date, time, _master_id = booking
     text = (
         "Действия по записи:\n\n"
         f"Клиент: {escape(name)}\n"
@@ -319,7 +319,13 @@ async def booking_actions_callback(callback: types.CallbackQuery):
     await callback.message.edit_text(
         text,
         parse_mode="HTML",
-        reply_markup=keyboards.get_admin_booking_actions_keyboard(booking_id, phone, context, int(page_str)),
+        reply_markup=keyboards.get_admin_booking_actions_keyboard(
+            booking_id,
+            phone,
+            context,
+            int(page_str),
+            telegram_user_id=user_id,
+        ),
     )
 
 
