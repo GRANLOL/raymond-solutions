@@ -17,6 +17,7 @@ class KeyboardTests(unittest.TestCase):
         self.assertIsNone(base_markup.keyboard[0][0].web_app)
         labels = [button.text for row in base_markup.keyboard for button in row]
         self.assertIn("🕘 История", labels)
+        self.assertNotIn("🔐 Конфиденциальность", labels)
 
     def test_build_category_tree_avoids_infinite_recursion_with_cycle(self):
         categories = [
@@ -44,6 +45,13 @@ class KeyboardTests(unittest.TestCase):
 
         self.assertIsNotNone(button.web_app)
 
+    def test_get_cancel_keyboard_adds_reschedule_button(self):
+        markup = common_keyboards.get_cancel_keyboard(7, 15)
+        first_row = markup.inline_keyboard[0]
+
+        self.assertEqual(first_row[0].callback_data, "cancel_7_15")
+        self.assertEqual(first_row[1].callback_data, "resched_7_15")
+
     def test_admin_booking_actions_prefers_telegram_link_when_user_id_exists(self):
         markup = common_keyboards.get_admin_booking_actions_keyboard(
             10,
@@ -56,3 +64,9 @@ class KeyboardTests(unittest.TestCase):
         first_row = markup.inline_keyboard[0]
         self.assertEqual(first_row[0].url, "tg://user?id=123456789")
         self.assertEqual(first_row[1].callback_data, "show_phone_77771234567")
+
+    def test_admin_booking_actions_include_no_show_for_scheduled(self):
+        markup = common_keyboards.get_admin_booking_actions_keyboard(10, "+7 (777) 123-45-67", "today", 0)
+        callback_data = [button.callback_data for row in markup.inline_keyboard for button in row if button.callback_data]
+
+        self.assertIn("admin_booking_status_10_no_show_today_0", callback_data)

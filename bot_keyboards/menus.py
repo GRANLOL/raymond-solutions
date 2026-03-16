@@ -19,7 +19,8 @@ admin_menu = ReplyKeyboardMarkup(
         [KeyboardButton(text="🗓 На сегодня"), KeyboardButton(text="🗓 Все записи"), KeyboardButton(text="📁 Категории")],
         [KeyboardButton(text="⚙️ Услуги"), KeyboardButton(text="🗓 Окно брони")],
         [KeyboardButton(text="🗓 График"), KeyboardButton(text="⚙️ Настройки"), KeyboardButton(text="📃 Excel")],
-        [KeyboardButton(text="📊 Статистика"), KeyboardButton(text="🗑 Очистить"), KeyboardButton(text="👤 Меню клиента")],
+        [KeyboardButton(text="📊 Статистика"), KeyboardButton(text="🗑 Очистить"), KeyboardButton(text="🔎 Поиск")],
+        [KeyboardButton(text="👤 Меню клиента")],
     ],
     resize_keyboard=True,
 )

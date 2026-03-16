@@ -70,7 +70,8 @@
             </div>
 
             <div class="footer-note">
-                Нажимая «Записаться», вы соглашаетесь с условиями обработки персональных данных.
+                <span>Нажимая «Записаться», вы соглашаетесь с условиями обработки персональных данных.</span>
+                <button class="footer-link" id="privacy-link" type="button">Политика конфиденциальности</button>
             </div>
 
             <div class="booking-action-bar">
@@ -94,6 +95,20 @@
             <div class="modal-actions">
                 <button class="modal-btn cancel" id="modal-cancel">Отмена</button>
                 <button class="modal-btn submit" id="modal-submit">Подтвердить запись</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay modal-overlay--privacy" id="privacy-modal" aria-hidden="true">
+        <div class="modal-card modal-card--privacy">
+            <h3 class="modal-title">Политика конфиденциальности</h3>
+            <div class="privacy-copy">
+                <p>Мы используем ваши имя, телефон, дату и время записи только для оформления визита, переноса, отмены и напоминаний.</p>
+                <p>Данные не передаются третьим лицам, кроме технически необходимых сервисов Telegram и инфраструктуры, на которой работает запись.</p>
+                <p>Если захотите удалить данные или задать вопрос по обработке, свяжитесь с администратором салона.</p>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-btn submit" id="privacy-close">Понятно</button>
             </div>
         </div>
     </div>

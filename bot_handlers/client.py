@@ -2,9 +2,14 @@ from __future__ import annotations
 
 import json
 import logging
+from datetime import datetime, timedelta
 
 from money import get_currency_symbol
 
+from booking_validation import parse_working_hours, slot_overlaps
+from rate_limit import get_rate_limit_remaining
+from time_utils import get_salon_now
+from .states import RescheduleBookingForm
 from .base import (
     F,
     FSMContext,
@@ -24,6 +29,78 @@ from .base import (
 router = Router()
 logger = logging.getLogger(__name__)
 USER_HISTORY_LIMIT = 5
+
+
+def _format_reschedule_date_label(target_date: datetime.date) -> str:
+    weekdays = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"]
+    return f"{target_date.strftime('%d.%m')} · {weekdays[target_date.weekday()]}"
+
+
+async def _build_reschedule_date_options(duration: int) -> list[tuple[str, str]]:
+    salon_now = get_salon_now()
+    booking_window = max(int(salon_config.get("booking_window", 7) or 7), 1)
+    working_days = salon_config.get("working_days", [1, 2, 3, 4, 5, 6, 0])
+    blacklisted_dates = set(salon_config.get("blacklisted_dates", []))
+    options: list[tuple[str, str]] = []
+
+    for offset in range(booking_window):
+        target_date = salon_now.date() + timedelta(days=offset)
+        date_value = target_date.strftime("%d.%m.%Y")
+        js_weekday = (target_date.weekday() + 1) % 7
+        if js_weekday not in working_days or date_value in blacklisted_dates:
+            continue
+
+        times = await _build_reschedule_time_options(date_value, duration)
+        if times:
+            options.append((_format_reschedule_date_label(target_date), date_value))
+
+    return options
+
+
+async def _build_reschedule_time_options(
+    date_value: str,
+    duration: int,
+    *,
+    current_date: str | None = None,
+    current_time: str | None = None,
+) -> list[str]:
+    start_mins, end_mins = parse_working_hours(salon_config.get("working_hours", "10:00-20:00"))
+    interval = int(salon_config.get("schedule_interval", 30) or 30)
+    if interval <= 0:
+        interval = 30
+
+    busy_slots = await database.get_busy_slots_by_date(date_value)
+    if current_date == date_value and current_time:
+        busy_slots = [
+            busy for busy in busy_slots
+            if not (busy.get("time") == current_time and int(busy.get("duration") or 60) == int(duration or 60))
+        ]
+
+    salon_now = get_salon_now()
+    salon_today = salon_now.strftime("%d.%m.%Y")
+    current_salon_mins = salon_now.hour * 60 + salon_now.minute if date_value == salon_today else -1
+
+    available_times: list[str] = []
+    for slot_start in range(start_mins, end_mins - int(duration or 60) + 1, interval):
+        if slot_start <= current_salon_mins:
+            continue
+
+        is_busy = False
+        for busy in busy_slots:
+            try:
+                busy_h, busy_m = map(int, busy["time"].split(":"))
+            except (KeyError, ValueError, AttributeError):
+                continue
+            busy_start = busy_h * 60 + busy_m
+            busy_duration = int(busy.get("duration") or 60)
+            if slot_overlaps(slot_start, int(duration or 60), busy_start, busy_duration):
+                is_busy = True
+                break
+
+        if not is_busy:
+            available_times.append(f"{slot_start // 60:02d}:{slot_start % 60:02d}")
+
+    return available_times
 
 
 def format_price_list_page(services, page: int, page_size: int = 20):
@@ -176,12 +253,6 @@ async def my_bookings_handler(message: types.Message):
         )
         return
 
-    summary_lines = ["📋 <b>Мои записи</b>", ""]
-    summary_lines.append(f"📌 Активные: <b>{len(active_bookings)}</b>")
-    summary_lines.append(f"🕘 В истории: <b>{history_count}</b>")
-    summary_lines.extend(["", "Предстоящие визиты можно отменить прямо из кабинета."])
-    await message.answer("\n".join(summary_lines), parse_mode="HTML")
-
     for booking_id, name, phone, date, time, status in active_bookings:
         await message.answer(
             format_user_booking_text(name, phone, date, time, status=status),
@@ -211,6 +282,200 @@ async def booking_history_handler(message: types.Message):
             if total_history > USER_HISTORY_LIMIT
             else ""
         ),
+        parse_mode="HTML",
+    )
+
+
+@router.callback_query(F.data.regexp(r"^resched_\d+_\d+$"))
+async def start_reschedule_callback(callback: types.CallbackQuery, state: FSMContext):
+    parts = callback.data.split("_")
+    if len(parts) < 3:
+        await callback.answer("Не удалось определить запись.", show_alert=True)
+        return
+
+    user_id_str = parts[1]
+    if str(callback.from_user.id) != user_id_str:
+        await callback.answer("Это не ваша запись.", show_alert=True)
+        return
+
+    try:
+        booking_id = int(parts[2])
+    except ValueError:
+        await callback.answer("Не удалось определить запись.", show_alert=True)
+        return
+
+    booking = await database.get_booking_record_by_id(booking_id)
+    if not booking:
+        await callback.answer("Запись не найдена.", show_alert=True)
+        return
+
+    _id, _user_id, name, phone, current_date, current_time, status, duration = booking
+    if status != "scheduled":
+        await callback.answer("Эту запись уже нельзя перенести.", show_alert=True)
+        return
+
+    date_options = await _build_reschedule_date_options(int(duration or 60))
+    if not date_options:
+        await callback.answer("Свободных дат для переноса сейчас нет.", show_alert=True)
+        return
+
+    await state.set_state(RescheduleBookingForm.waiting_for_date)
+    await state.update_data(
+        booking_id=booking_id,
+        booking_name=name,
+        booking_phone=phone,
+        current_date=current_date,
+        current_time=current_time,
+        duration=int(duration or 60),
+    )
+    await callback.answer()
+    await callback.message.answer(
+        (
+            "🔁 <b>Перенос записи</b>\n\n"
+            f"<b>Сейчас:</b> {current_date} в {current_time}\n"
+            "Выберите новую дату:"
+        ),
+        parse_mode="HTML",
+        reply_markup=keyboards.get_reschedule_dates_keyboard(booking_id, date_options),
+    )
+
+
+@router.callback_query(F.data.startswith("resched_date_"))
+async def reschedule_date_callback(callback: types.CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    parts = callback.data.split("_", 3)
+    if len(parts) != 4:
+        await callback.answer("Не удалось определить дату.", show_alert=True)
+        return
+
+    booking_id = int(parts[2])
+    date_value = parts[3]
+    if state_data.get("booking_id") != booking_id:
+        await callback.answer("Сессия переноса устарела. Начните заново.", show_alert=True)
+        return
+
+    time_options = await _build_reschedule_time_options(
+        date_value,
+        int(state_data["duration"]),
+        current_date=state_data.get("current_date"),
+        current_time=state_data.get("current_time"),
+    )
+    if not time_options:
+        await callback.answer("На эту дату нет свободного времени.", show_alert=True)
+        return
+
+    await state.set_state(RescheduleBookingForm.waiting_for_time)
+    await state.update_data(new_date=date_value)
+    await callback.answer()
+    await callback.message.edit_text(
+        (
+            "🔁 <b>Перенос записи</b>\n\n"
+            f"<b>Новая дата:</b> {date_value}\n"
+            "Выберите новое время:"
+        ),
+        parse_mode="HTML",
+        reply_markup=keyboards.get_reschedule_times_keyboard(booking_id, date_value, time_options),
+    )
+
+
+@router.callback_query(F.data.startswith("resched_time_"))
+async def reschedule_time_callback(callback: types.CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    parts = callback.data.split("_", 4)
+    if len(parts) != 5:
+        await callback.answer("Не удалось определить время.", show_alert=True)
+        return
+
+    booking_id = int(parts[2])
+    date_value = parts[3]
+    time_value = parts[4]
+    if state_data.get("booking_id") != booking_id:
+        await callback.answer("Сессия переноса устарела. Начните заново.", show_alert=True)
+        return
+
+    await state.set_state(RescheduleBookingForm.waiting_for_confirmation)
+    await state.update_data(new_date=date_value, new_time=time_value)
+    await callback.answer()
+    await callback.message.edit_text(
+        (
+            "🔁 <b>Подтвердите перенос</b>\n\n"
+            f"<b>Было:</b> {state_data['current_date']} в {state_data['current_time']}\n"
+            f"<b>Станет:</b> {date_value} в {time_value}"
+        ),
+        parse_mode="HTML",
+        reply_markup=keyboards.get_reschedule_confirm_keyboard(booking_id, date_value, time_value),
+    )
+
+
+@router.callback_query(F.data.startswith("resched_confirm_"))
+async def reschedule_confirm_callback(callback: types.CallbackQuery, state: FSMContext):
+    state_data = await state.get_data()
+    parts = callback.data.split("_", 4)
+    if len(parts) != 5:
+        await callback.answer("Не удалось подтвердить перенос.", show_alert=True)
+        return
+
+    booking_id = int(parts[2])
+    date_value = parts[3]
+    time_value = parts[4]
+    if state_data.get("booking_id") != booking_id:
+        await callback.answer("Сессия переноса устарела. Начните заново.", show_alert=True)
+        return
+
+    remaining = get_rate_limit_remaining(f"reschedule_confirm:{callback.from_user.id}", cooldown_seconds=4)
+    if remaining > 0:
+        await callback.answer(f"Слишком быстро. Повторите через {remaining} сек.", show_alert=True)
+        return
+
+    booking = await database.get_booking_record_by_id(booking_id)
+    if not booking:
+        await callback.answer("Запись не найдена.", show_alert=True)
+        await state.clear()
+        return
+
+    _id, _user_id, name, phone, _current_date, _current_time, status, _duration = booking
+    if status != "scheduled":
+        await callback.answer("Эту запись уже нельзя перенести.", show_alert=True)
+        await state.clear()
+        return
+
+    moved = await database.reschedule_booking_if_available(booking_id, date_value, time_value)
+    if not moved:
+        await callback.answer("Этот слот уже занят. Выберите другое время.", show_alert=True)
+        return
+
+    admin_id = getenv("ADMIN_ID")
+    if admin_id:
+        await callback.bot.send_message(
+            admin_id,
+            (
+                "🔁 <b>Запись перенесена</b>\n\n"
+                f"<b>Клиент:</b> {name}\n"
+                f"<b>Телефон:</b> {phone}\n"
+                f"<b>Было:</b> {state_data['current_date']} в {state_data['current_time']}\n"
+                f"<b>Стало:</b> {date_value} в {time_value}"
+            ),
+            parse_mode="HTML",
+        )
+
+    await callback.answer("Запись перенесена")
+    await callback.message.edit_text(
+        (
+            "✅ <b>Запись перенесена</b>\n\n"
+            f"<b>Новая дата:</b> {date_value}\n"
+            f"<b>Новое время:</b> {time_value}"
+        ),
+        parse_mode="HTML",
+    )
+    await state.clear()
+
+
+@router.callback_query(F.data.startswith("resched_cancel_"))
+async def reschedule_cancel_callback(callback: types.CallbackQuery, state: FSMContext):
+    await state.clear()
+    await callback.answer("Перенос отменён")
+    await callback.message.edit_text(
+        "❌ <b>Перенос отменён</b>\n\nЕсли нужно, вы можете открыть перенос заново из карточки записи.",
         parse_mode="HTML",
     )
 
