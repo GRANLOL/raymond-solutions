@@ -66,7 +66,7 @@ def get_client_price_keyboard(page: int, total_pages: int):
     if page > 0:
         nav_buttons.append(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"client_price_page_{page - 1}"))
     if page < total_pages - 1:
-        nav_buttons.append(InlineKeyboardButton(text="Вперёд ➡️", callback_data=f"client_price_page_{page + 1}"))
+        nav_buttons.append(InlineKeyboardButton(text="Вперед ➡️", callback_data=f"client_price_page_{page + 1}"))
 
     if nav_buttons:
         builder.row(*nav_buttons)
@@ -116,7 +116,7 @@ def get_admin_booking_page_keyboard(bookings, context: str, page: int, total_pag
     if page > 0:
         nav.append(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"bookings_page_{context}_{page - 1}"))
     if page < total_pages - 1:
-        nav.append(InlineKeyboardButton(text="Вперёд ➡️", callback_data=f"bookings_page_{context}_{page + 1}"))
+        nav.append(InlineKeyboardButton(text="Вперед ➡️", callback_data=f"bookings_page_{context}_{page + 1}"))
     if nav:
         builder.row(*nav)
 

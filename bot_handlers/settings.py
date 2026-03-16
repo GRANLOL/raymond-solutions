@@ -35,14 +35,14 @@ def _schedule_markup():
 async def system_settings_handler(message: types.Message):
     if not _is_admin(message.from_user.id):
         return
-    await message.answer("Настройки системы:", reply_markup=keyboards.get_system_settings_keyboard(False))
+    await message.answer("Настройки системы:", reply_markup=keyboards.get_system_settings_keyboard())
 
 
 @router.callback_query(F.data == "back_to_settings")
 async def back_to_settings_callback(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         return
-    await callback.message.edit_text("Настройки системы:", reply_markup=keyboards.get_system_settings_keyboard(False))
+    await callback.message.edit_text("Настройки системы:", reply_markup=keyboards.get_system_settings_keyboard())
 
 
 @router.callback_query(F.data == "settings_reminders")
@@ -116,7 +116,7 @@ async def settings_timezone_callback(callback: types.CallbackQuery, state: FSMCo
     await state.set_state(EditTimezoneForm.offset)
     await callback.message.edit_text(
         f"Текущее смещение: UTC{'+' if current_tz >= 0 else ''}{current_tz}\nВведите новое смещение в часах:",
-        reply_markup=keyboards.get_cancel_admin_action_keyboard(),
+        reply_markup=keyboards.get_cancel_admin_action_keyboard("back_to_settings", "◀️ В настройки"),
     )
 
 
@@ -134,7 +134,7 @@ async def process_timezone_offset(message: types.Message, state: FSMContext):
     await state.clear()
     await message.answer(
         f"✅ Часовой пояс сохранен: UTC{'+' if offset >= 0 else ''}{offset}",
-        reply_markup=keyboards.get_system_settings_keyboard(False),
+        reply_markup=keyboards.get_system_settings_keyboard(),
     )
 
 
@@ -156,11 +156,14 @@ async def set_currency_callback(callback: types.CallbackQuery, state: FSMContext
     payload = callback.data.replace("set_currency_", "", 1)
     if payload == "custom":
         await state.set_state(EditCurrencyForm.symbol)
-        await callback.message.edit_text("Введите символ или короткое обозначение валюты.", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+        await callback.message.edit_text(
+            "Введите символ или короткое обозначение валюты.",
+            reply_markup=keyboards.get_cancel_admin_action_keyboard("back_to_settings", "◀️ В настройки"),
+        )
         return
 
     update_config("currency_symbol", payload)
-    await callback.message.edit_text(f"✅ Валюта обновлена: {payload}", reply_markup=keyboards.get_system_settings_keyboard(False))
+    await callback.message.edit_text(f"✅ Валюта обновлена: {payload}", reply_markup=keyboards.get_system_settings_keyboard())
 
 
 @router.message(EditCurrencyForm.symbol)
@@ -171,7 +174,7 @@ async def process_currency_symbol(message: types.Message, state: FSMContext):
         return
     update_config("currency_symbol", symbol)
     await state.clear()
-    await message.answer(f"✅ Валюта обновлена: {symbol}", reply_markup=keyboards.get_system_settings_keyboard(False))
+    await message.answer(f"✅ Валюта обновлена: {symbol}", reply_markup=keyboards.get_system_settings_keyboard())
 
 
 @router.message(F.text == "🗓 График")
@@ -363,7 +366,7 @@ async def process_booking_window(message: types.Message, state: FSMContext):
         return
     update_config("booking_window", days)
     await state.clear()
-    await message.answer(f"✅ Окно бронирования изменено на {days} дней.", reply_markup=keyboards.get_system_settings_keyboard(False))
+    await message.answer(f"✅ Окно бронирования изменено на {days} дней.", reply_markup=keyboards.get_system_settings_keyboard())
 
 
 @router.callback_query(F.data == "settings_working_hours")
@@ -374,7 +377,7 @@ async def settings_working_hours_cb(callback: types.CallbackQuery, state: FSMCon
     await state.set_state(WorkingHoursForm.hours)
     await callback.message.edit_text(
         f"Текущие часы работы: {current_wh}\nВведите новые часы в формате ЧЧ:ММ-ЧЧ:ММ:",
-        reply_markup=keyboards.get_cancel_admin_action_keyboard(),
+        reply_markup=keyboards.get_cancel_admin_action_keyboard("back_to_settings", "◀️ В настройки"),
     )
 
 
@@ -382,11 +385,14 @@ async def settings_working_hours_cb(callback: types.CallbackQuery, state: FSMCon
 async def process_working_hours(message: types.Message, state: FSMContext):
     wh = message.text.strip()
     if not re.match(r"^\d{2}:\d{2}-\d{2}:\d{2}$", wh):
-        await message.answer("Неверный формат. Используйте ЧЧ:ММ-ЧЧ:ММ.", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+        await message.answer(
+            "Неверный формат. Используйте ЧЧ:ММ-ЧЧ:ММ.",
+            reply_markup=keyboards.get_cancel_admin_action_keyboard("back_to_settings", "◀️ В настройки"),
+        )
         return
     update_config("working_hours", wh)
     await state.clear()
-    await message.answer(f"✅ Часы работы изменены на {wh}.", reply_markup=keyboards.get_system_settings_keyboard(False))
+    await message.answer(f"✅ Часы работы изменены на {wh}.", reply_markup=keyboards.get_system_settings_keyboard())
 
 
 @router.callback_query(F.data == "settings_interval")
@@ -397,7 +403,7 @@ async def settings_interval_cb(callback: types.CallbackQuery, state: FSMContext)
     await state.set_state(ScheduleIntervalForm.interval)
     await callback.message.edit_text(
         f"Текущий шаг записи: {current_interval} мин.\nВведите новый интервал в минутах:",
-        reply_markup=keyboards.get_cancel_admin_action_keyboard(),
+        reply_markup=keyboards.get_cancel_admin_action_keyboard("back_to_settings", "◀️ В настройки"),
     )
 
 
@@ -413,4 +419,4 @@ async def process_schedule_interval(message: types.Message, state: FSMContext):
 
     update_config("schedule_interval", val)
     await state.clear()
-    await message.answer(f"✅ Шаг записи изменен на {val} мин.", reply_markup=keyboards.get_system_settings_keyboard(False))
+    await message.answer(f"✅ Шаг записи изменен на {val} мин.", reply_markup=keyboards.get_system_settings_keyboard())

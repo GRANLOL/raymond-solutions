@@ -33,7 +33,7 @@ def get_working_days_keyboard(working_days, blacklisted_dates=None):
     return builder.as_markup()
 
 
-def get_system_settings_keyboard(_use_masters: bool = False):
+def get_system_settings_keyboard():
     from aiogram.utils.keyboard import InlineKeyboardBuilder
 
     builder = InlineKeyboardBuilder()
@@ -58,7 +58,7 @@ def get_reminder_settings_keyboard():
     return builder.as_markup()
 
 
-def get_clear_options_keyboard(_use_masters: bool = False):
+def get_clear_options_keyboard():
     from aiogram.utils.keyboard import InlineKeyboardBuilder
 
     builder = InlineKeyboardBuilder()
@@ -91,7 +91,6 @@ def get_currency_keyboard():
         builder.row(InlineKeyboardButton(text=f"Выбрать {symbol}", callback_data=f"set_currency_{symbol}"))
     builder.row(InlineKeyboardButton(text="⌨️ Ввести вручную", callback_data="set_currency_custom"))
     builder.row(InlineKeyboardButton(text="◀️ Назад в настройки", callback_data="back_to_settings"))
-    builder.row(InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_admin_action"))
     return builder.as_markup()
 
 

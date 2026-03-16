@@ -1,7 +1,7 @@
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 
-def get_main_menu(is_admin: bool = False, is_master: bool = False):
+def get_main_menu(is_admin: bool = False):
     keyboard = [
         [KeyboardButton(text="🌸 Записаться")],
         [KeyboardButton(text="💸 Прайс-лист"), KeyboardButton(text="💅 Портфолио")],

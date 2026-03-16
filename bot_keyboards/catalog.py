@@ -29,7 +29,7 @@ def get_services_keyboard(services, page: int = 0, page_size: int = 20):
     if page > 0:
         nav_buttons.append(InlineKeyboardButton(text="⬅️ Назад", callback_data=f"srv_page_{page - 1}"))
     if end < total:
-        nav_buttons.append(InlineKeyboardButton(text="Вперёд ➡️", callback_data=f"srv_page_{page + 1}"))
+        nav_buttons.append(InlineKeyboardButton(text="Вперед ➡️", callback_data=f"srv_page_{page + 1}"))
     if nav_buttons:
         builder.row(*nav_buttons)
 
@@ -78,10 +78,11 @@ def get_categories_keyboard(categories):
     for category, depth in tree:
         name = category["name"] if isinstance(category, dict) else category[1]
         category_id = category["id"] if isinstance(category, dict) else category[0]
-        prefix = "  " * depth + ("↳ " if depth > 0 else "📃 ")
+        prefix = "  " * depth + ("↳ " if depth > 0 else "📁 ")
         builder.row(InlineKeyboardButton(text=f"✏️ {prefix}{name[:20]}", callback_data=f"edit_cat_{category_id}"))
     builder.row(InlineKeyboardButton(text="➕ Создать категорию", callback_data="add_category"))
     builder.row(InlineKeyboardButton(text="➕ Создать подкатегорию", callback_data="add_subcategory_existing"))
+    builder.row(InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_admin_action"))
     return builder.as_markup()
 
 
@@ -107,7 +108,7 @@ def get_select_category_keyboard(categories):
     for category, depth in tree:
         name = category["name"] if isinstance(category, dict) else category[1]
         category_id = category["id"] if isinstance(category, dict) else category[0]
-        prefix = "  " * depth + ("↳ " if depth > 0 else "📃 ")
+        prefix = "  " * depth + ("↳ " if depth > 0 else "📁 ")
         builder.row(InlineKeyboardButton(text=f"{prefix}{name[:20]}", callback_data=f"sel_cat_{category_id}"))
 
     builder.row(InlineKeyboardButton(text="Без категории", callback_data="sel_cat_0"))
@@ -122,7 +123,7 @@ def get_parent_category_keyboard(categories):
     for category, depth in tree:
         name = category["name"] if isinstance(category, dict) else category[1]
         category_id = category["id"] if isinstance(category, dict) else category[0]
-        prefix = "  " * depth + ("↳ " if depth > 0 else "📃 ")
+        prefix = "  " * depth + ("↳ " if depth > 0 else "📁 ")
         builder.row(InlineKeyboardButton(text=f"{prefix}{name[:20]}", callback_data=f"sel_parent_{category_id}"))
 
     builder.row(InlineKeyboardButton(text="Сделать основной (без родителя)", callback_data="sel_parent_0"))

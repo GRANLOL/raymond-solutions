@@ -6,9 +6,9 @@ import bot_keyboards.menus as menu_keyboards
 
 
 class KeyboardTests(unittest.TestCase):
-    def test_get_main_menu_adds_admin_and_master_buttons(self):
-        base_markup = menu_keyboards.get_main_menu(is_admin=False, is_master=False)
-        extended_markup = menu_keyboards.get_main_menu(is_admin=True, is_master=True)
+    def test_get_main_menu_adds_admin_button(self):
+        base_markup = menu_keyboards.get_main_menu(is_admin=False)
+        extended_markup = menu_keyboards.get_main_menu(is_admin=True)
 
         base_count = sum(len(row) for row in base_markup.keyboard)
         extended_count = sum(len(row) for row in extended_markup.keyboard)

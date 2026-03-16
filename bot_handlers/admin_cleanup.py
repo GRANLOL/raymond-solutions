@@ -17,7 +17,7 @@ async def clear_bookings_handler(message: types.Message):
 
     await message.answer(
         "Выберите, какие записи вы хотите очистить:",
-        reply_markup=keyboards.get_clear_options_keyboard(False),
+        reply_markup=keyboards.get_clear_options_keyboard(),
     )
 
 
