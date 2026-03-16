@@ -6,6 +6,7 @@ def get_main_menu(is_admin: bool = False):
         [KeyboardButton(text="📲 Записаться")],
         [KeyboardButton(text="💸 Прайс-лист"), KeyboardButton(text="💅 Портфолио")],
         [KeyboardButton(text="📌 Адрес"), KeyboardButton(text="📋 Мои записи")],
+        [KeyboardButton(text="🕘 История")],
     ]
     if is_admin:
         keyboard.append([KeyboardButton(text="⚙️ Панель управления")])

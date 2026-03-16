@@ -15,6 +15,8 @@ class KeyboardTests(unittest.TestCase):
 
         self.assertGreater(extended_count, base_count)
         self.assertIsNone(base_markup.keyboard[0][0].web_app)
+        labels = [button.text for row in base_markup.keyboard for button in row]
+        self.assertIn("🕘 История", labels)
 
     def test_build_category_tree_avoids_infinite_recursion_with_cycle(self):
         categories = [

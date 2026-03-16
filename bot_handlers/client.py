@@ -162,23 +162,24 @@ async def process_web_app_data(message: types.Message, state: FSMContext):
 async def my_bookings_handler(message: types.Message):
     await database.sync_completed_bookings()
     bookings = await database.get_user_bookings(message.from_user.id)
-    if not bookings:
+    active_bookings = [booking for booking in bookings if booking[5] == "scheduled"]
+    history_count = len([booking for booking in bookings if booking[5] != "scheduled"])
+
+    if not active_bookings:
         await message.answer(
-            "📋 <b>У вас пока нет записей</b>\n\nКогда будете готовы, откройте форму и выберите удобное время.",
+            (
+                "📋 <b>Активных записей сейчас нет</b>\n\n"
+                f"🕘 Записей в истории: <b>{history_count}</b>\n"
+                "Если захотите, откройте кнопку «История» или запишитесь на новый визит."
+            ),
             parse_mode="HTML",
         )
         return
 
-    active_bookings = [booking for booking in bookings if booking[5] == "scheduled"]
-    history_bookings = [booking for booking in bookings if booking[5] != "scheduled"][:USER_HISTORY_LIMIT]
-
     summary_lines = ["📋 <b>Мои записи</b>", ""]
     summary_lines.append(f"📌 Активные: <b>{len(active_bookings)}</b>")
-    summary_lines.append(f"🕘 История: <b>{len([booking for booking in bookings if booking[5] != 'scheduled'])}</b>")
-    if active_bookings:
-        summary_lines.extend(["", "Предстоящие визиты можно отменить прямо из кабинета."])
-    elif history_bookings:
-        summary_lines.extend(["", "Сейчас активных записей нет, ниже сохранена история посещений."])
+    summary_lines.append(f"🕘 В истории: <b>{history_count}</b>")
+    summary_lines.extend(["", "Предстоящие визиты можно отменить прямо из кабинета."])
     await message.answer("\n".join(summary_lines), parse_mode="HTML")
 
     for booking_id, name, phone, date, time, status in active_bookings:
@@ -188,17 +189,30 @@ async def my_bookings_handler(message: types.Message):
             parse_mode="HTML",
         )
 
-    if history_bookings:
+@router.message(F.text == "🕘 История")
+async def booking_history_handler(message: types.Message):
+    await database.sync_completed_bookings()
+    bookings = await database.get_user_bookings(message.from_user.id)
+    history_bookings = [booking for booking in bookings if booking[5] != "scheduled"][:USER_HISTORY_LIMIT]
+
+    if not history_bookings:
         await message.answer(
-            format_booking_history_text(
-                [(name, date, time, status, phone) for _booking_id, name, phone, date, time, status in history_bookings]
-            ) + (
-                f"\n\n<i>Показаны последние {USER_HISTORY_LIMIT} записей.</i>"
-                if len(bookings) - len(active_bookings) > USER_HISTORY_LIMIT
-                else ""
-            ),
+            "🕘 <b>История пока пуста</b>\n\nЗавершённые и отменённые записи появятся здесь после первых визитов.",
             parse_mode="HTML",
         )
+        return
+
+    total_history = len([booking for booking in bookings if booking[5] != "scheduled"])
+    await message.answer(
+        format_booking_history_text(
+            [(name, date, time, status, phone) for _booking_id, name, phone, date, time, status in history_bookings]
+        ) + (
+            f"\n\n<i>Показаны последние {USER_HISTORY_LIMIT} записей.</i>"
+            if total_history > USER_HISTORY_LIMIT
+            else ""
+        ),
+        parse_mode="HTML",
+    )
 
 
 @router.callback_query(F.data.startswith("cancel_"))

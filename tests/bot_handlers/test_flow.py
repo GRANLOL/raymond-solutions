@@ -68,7 +68,7 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
         finalize_mock.assert_not_awaited()
         state.clear.assert_not_awaited()
 
-    async def test_my_bookings_handler_sends_summary_active_cards_and_history_block(self):
+    async def test_my_bookings_handler_sends_summary_and_active_cards_only(self):
         message = make_message(user_id=55)
         bookings = [
             (101, "Alice", "+100", "14.03.2026", "10:00", "scheduled"),
@@ -79,19 +79,17 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
         with patch.object(client_handlers.database, "sync_completed_bookings", AsyncMock()), \
              patch.object(client_handlers.database, "get_user_bookings", AsyncMock(return_value=bookings)), \
              patch.object(client_handlers, "format_user_booking_text", return_value="active-card"), \
-             patch.object(client_handlers, "format_booking_history_text", return_value="history-block"), \
              patch.object(client_handlers.keyboards, "get_cancel_keyboard", return_value="kb1"):
             await client_handlers.my_bookings_handler(message)
 
-        self.assertEqual(message.answer.await_count, 3)
+        self.assertEqual(message.answer.await_count, 2)
         first_call = message.answer.await_args_list[0]
         self.assertIn("Мои записи", first_call.args[0])
         self.assertIn("Активные", first_call.args[0])
-        self.assertIn("История", first_call.args[0])
+        self.assertIn("В истории", first_call.args[0])
         message.answer.assert_any_await("active-card", reply_markup="kb1", parse_mode="HTML")
-        message.answer.assert_any_await("history-block", parse_mode="HTML")
 
-    async def test_my_bookings_handler_shows_empty_state_when_user_has_no_bookings(self):
+    async def test_my_bookings_handler_shows_empty_state_when_user_has_no_active_bookings(self):
         message = make_message(user_id=55)
 
         with patch.object(client_handlers.database, "sync_completed_bookings", AsyncMock()), \
@@ -100,7 +98,22 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
 
         message.answer.assert_awaited_once_with(ANY, parse_mode="HTML")
 
-    async def test_my_bookings_handler_appends_history_limit_note(self):
+    async def test_booking_history_handler_sends_history_block(self):
+        message = make_message(user_id=55)
+        bookings = [
+            (101, "Alice", "+100", "14.03.2026", "10:00", "scheduled"),
+            (102, "Bob", "+200", "15.03.2026", "11:00", "completed"),
+            (103, "Cara", "+300", "16.03.2026", "12:00", "cancelled"),
+        ]
+
+        with patch.object(client_handlers.database, "sync_completed_bookings", AsyncMock()), \
+             patch.object(client_handlers.database, "get_user_bookings", AsyncMock(return_value=bookings)), \
+             patch.object(client_handlers, "format_booking_history_text", return_value="history-block"):
+            await client_handlers.booking_history_handler(message)
+
+        message.answer.assert_awaited_once_with("history-block", parse_mode="HTML")
+
+    async def test_booking_history_handler_appends_history_limit_note(self):
         message = make_message(user_id=55)
         bookings = [
             (101, "Alice", "+100", "14.03.2026", "10:00", "scheduled"),
@@ -114,13 +127,23 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
 
         with patch.object(client_handlers.database, "sync_completed_bookings", AsyncMock()), \
              patch.object(client_handlers.database, "get_user_bookings", AsyncMock(return_value=bookings)), \
-             patch.object(client_handlers, "format_user_booking_text", return_value="active-card"), \
-             patch.object(client_handlers, "format_booking_history_text", return_value="history-block"), \
-             patch.object(client_handlers.keyboards, "get_cancel_keyboard", return_value="kb1"):
-            await client_handlers.my_bookings_handler(message)
+             patch.object(client_handlers, "format_booking_history_text", return_value="history-block"):
+            await client_handlers.booking_history_handler(message)
 
-        history_call = message.answer.await_args_list[-1]
-        self.assertIn("Показаны последние 5 записей.", history_call.args[0])
+        message.answer.assert_awaited_once()
+        self.assertIn("Показаны последние 5 записей.", message.answer.await_args.args[0])
+
+    async def test_booking_history_handler_shows_empty_state_when_history_missing(self):
+        message = make_message(user_id=55)
+        bookings = [
+            (101, "Alice", "+100", "14.03.2026", "10:00", "scheduled"),
+        ]
+
+        with patch.object(client_handlers.database, "sync_completed_bookings", AsyncMock()), \
+             patch.object(client_handlers.database, "get_user_bookings", AsyncMock(return_value=bookings)):
+            await client_handlers.booking_history_handler(message)
+
+        message.answer.assert_awaited_once_with(ANY, parse_mode="HTML")
 
 
 class ReminderFlowTests(unittest.IsolatedAsyncioTestCase):
