@@ -9,6 +9,51 @@ from tests.support import make_callback, make_message, make_state
 
 
 class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
+    async def test_handle_portfolio_sends_media_group_and_gallery_button(self):
+        message = make_message(user_id=10)
+        portfolio_config = {
+            "portfolio_url": "https://t.me/example",
+            "portfolio_items": [
+                {"media": "file_1", "caption": "Первая работа"},
+                {"media": "file_2", "caption": "Вторая работа"},
+            ],
+        }
+
+        with patch.object(client_handlers, "salon_config", portfolio_config), \
+             patch.object(client_handlers.keyboards, "get_portfolio_keyboard", return_value="gallery-kb"):
+            await client_handlers.handle_portfolio(message)
+
+        message.bot.send_media_group.assert_awaited_once()
+        media = message.bot.send_media_group.await_args.kwargs["media"]
+        self.assertEqual(len(media), 2)
+        self.assertEqual(media[0].media, "file_1")
+        self.assertIn("Примеры работ", media[0].caption)
+        message.answer.assert_awaited_once_with(
+            "✨ Больше примеров доступно в полной галерее.",
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+            reply_markup="gallery-kb",
+        )
+
+    async def test_handle_portfolio_falls_back_to_gallery_link(self):
+        message = make_message(user_id=10)
+        portfolio_config = {
+            "portfolio_url": "https://t.me/example",
+            "portfolio_items": [],
+        }
+
+        with patch.object(client_handlers, "salon_config", portfolio_config), \
+             patch.object(client_handlers.keyboards, "get_portfolio_keyboard", return_value="gallery-kb"):
+            await client_handlers.handle_portfolio(message)
+
+        message.bot.send_media_group.assert_not_awaited()
+        message.answer.assert_awaited_once_with(
+            ANY,
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+            reply_markup="gallery-kb",
+        )
+
     async def test_launch_booking_webapp_sends_inline_web_app_button(self):
         message = make_message(user_id=10)
 

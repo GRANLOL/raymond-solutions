@@ -17,6 +17,7 @@ class KeyboardTests(unittest.TestCase):
         self.assertIsNone(base_markup.keyboard[0][0].web_app)
         labels = [button.text for row in base_markup.keyboard for button in row]
         self.assertIn("🕘 История", labels)
+        self.assertIn("🖼 Примеры работ", labels)
         self.assertNotIn("🔐 Конфиденциальность", labels)
 
     def test_build_category_tree_avoids_infinite_recursion_with_cycle(self):
@@ -44,6 +45,12 @@ class KeyboardTests(unittest.TestCase):
         button = markup.inline_keyboard[0][0]
 
         self.assertIsNotNone(button.web_app)
+
+    def test_get_portfolio_keyboard_uses_url_button(self):
+        markup = common_keyboards.get_portfolio_keyboard("https://t.me/example")
+        button = markup.inline_keyboard[0][0]
+
+        self.assertEqual(button.url, "https://t.me/example")
 
     def test_get_cancel_keyboard_adds_reschedule_button(self):
         markup = common_keyboards.get_cancel_keyboard(7, 15)

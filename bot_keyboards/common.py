@@ -36,6 +36,14 @@ def get_booking_launch_keyboard():
     )
 
 
+def get_portfolio_keyboard(url: str):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [InlineKeyboardButton(text="✨ Открыть всю галерею", url=url)]
+        ]
+    )
+
+
 def get_back_to_admin_menu_keyboard():
     from aiogram.utils.keyboard import InlineKeyboardBuilder
 

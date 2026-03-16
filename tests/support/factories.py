@@ -16,7 +16,7 @@ def make_message(
         web_app_data=SimpleNamespace(data=json.dumps(web_app_data)) if web_app_data is not None else None,
         answer=AsyncMock(),
         answer_document=AsyncMock(),
-        bot=SimpleNamespace(send_message=AsyncMock()),
+        bot=SimpleNamespace(send_message=AsyncMock(), send_media_group=AsyncMock()),
     )
 
 

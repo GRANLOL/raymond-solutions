@@ -3,6 +3,20 @@
   "address": "г. Москва, ул. Арбат, д. 1, офис 10",
   "map_url": "https://yandex.ru/maps/",
   "portfolio_url": "https://t.me/your_portfolio_channel",
+  "portfolio_items": [
+    {
+      "media": "https://placehold.co/1200x900/png?text=Example+Work+1",
+      "caption": "Пример работы №1"
+    },
+    {
+      "media": "https://placehold.co/1200x900/png?text=Example+Work+2",
+      "caption": "Пример работы №2"
+    },
+    {
+      "media": "https://placehold.co/1200x900/png?text=Example+Work+3",
+      "caption": "Пример работы №3"
+    }
+  ],
   "timezone_offset": 5,
   "working_hours": "ПН-ВС 10:00 - 21:00",
   "price_list": [

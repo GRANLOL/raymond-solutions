@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from datetime import datetime, timedelta
+from html import escape
 
 from money import get_currency_symbol
 
@@ -29,6 +30,7 @@ from .base import (
 router = Router()
 logger = logging.getLogger(__name__)
 USER_HISTORY_LIMIT = 5
+PORTFOLIO_PREVIEW_LIMIT = 5
 
 
 def _format_reschedule_date_label(target_date: datetime.date) -> str:
@@ -138,6 +140,38 @@ def format_price_list_page(services, page: int, page_size: int = 20):
     return page_text, total_pages
 
 
+def _get_portfolio_items(limit: int = PORTFOLIO_PREVIEW_LIMIT) -> list[dict[str, str]]:
+    raw_items = salon_config.get("portfolio_items", [])
+    if not isinstance(raw_items, list):
+        return []
+
+    items: list[dict[str, str]] = []
+    for raw_item in raw_items:
+        media = ""
+        caption = ""
+
+        if isinstance(raw_item, str):
+            media = raw_item.strip()
+        elif isinstance(raw_item, dict):
+            media = str(
+                raw_item.get("media")
+                or raw_item.get("url")
+                or raw_item.get("file_id")
+                or ""
+            ).strip()
+            caption = str(raw_item.get("caption") or "").strip()
+        else:
+            continue
+
+        if media:
+            items.append({"media": media, "caption": caption})
+
+        if len(items) >= limit:
+            break
+
+    return items
+
+
 @router.message(F.text == "💸 Прайс-лист")
 async def handle_price(message: types.Message):
     services = await database.get_all_services()
@@ -185,16 +219,69 @@ async def handle_address(message: types.Message):
     await message.answer(text, parse_mode="HTML", disable_web_page_preview=False)
 
 
-@router.message(F.text == "💅 Портфолио")
+@router.message(F.text == "🖼 Примеры работ")
 async def handle_portfolio(message: types.Message):
     portfolio_url = salon_config.get("portfolio_url", "")
-    caption = "✨ <b>Наши работы</b>\n\n"
-    if portfolio_url:
-        caption += f"Посмотреть примеры можно здесь:\n<a href='{portfolio_url}'>Перейти в портфолио</a>"
-    else:
-        caption += "Ссылка на портфолио пока не добавлена."
+    portfolio_items = _get_portfolio_items()
 
-    await message.answer(caption, parse_mode="HTML", disable_web_page_preview=False)
+    if portfolio_items:
+        media_group = []
+        for index, item in enumerate(portfolio_items):
+            item_caption = escape(item["caption"])
+            if index == 0:
+                lines = [
+                    "🖼 <b>Примеры работ</b>",
+                    "",
+                    "Ниже собрал несколько работ прямо в чате.",
+                ]
+                if item_caption:
+                    lines.extend(["", item_caption])
+                if portfolio_url:
+                    lines.extend(["", "Полную галерею можно открыть по кнопке ниже."])
+                caption = "\n".join(lines)
+            else:
+                caption = item_caption
+
+            media_group.append(
+                types.InputMediaPhoto(
+                    media=item["media"],
+                    caption=caption or None,
+                    parse_mode="HTML" if caption else None,
+                )
+            )
+
+        await message.bot.send_media_group(chat_id=message.from_user.id, media=media_group)
+
+        if portfolio_url:
+            await message.answer(
+                "✨ Больше примеров доступно в полной галерее.",
+                parse_mode="HTML",
+                disable_web_page_preview=True,
+                reply_markup=keyboards.get_portfolio_keyboard(portfolio_url),
+            )
+        return
+
+    if portfolio_url:
+        await message.answer(
+            (
+                "🖼 <b>Примеры работ</b>\n\n"
+                "Сейчас полная подборка открывается отдельной галереей.\n"
+                "Нажмите кнопку ниже, чтобы посмотреть все работы."
+            ),
+            parse_mode="HTML",
+            disable_web_page_preview=True,
+            reply_markup=keyboards.get_portfolio_keyboard(portfolio_url),
+        )
+        return
+
+    await message.answer(
+        (
+            "🖼 <b>Примеры работ</b>\n\n"
+            "Галерея пока не добавлена.\n"
+            "Чуть позже здесь появятся фотографии с подписями."
+        ),
+        parse_mode="HTML",
+    )
 
 
 @router.message(F.text == "📲 Записаться")
