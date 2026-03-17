@@ -62,6 +62,22 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
 
         message.answer.assert_awaited_once_with(ANY, parse_mode="HTML", reply_markup="webapp-kb")
 
+    async def test_price_page_callback_answers_and_edits_message(self):
+        callback = make_callback(data="client_price_page_1", user_id=10)
+        services = [{"id": 1, "name": "Service", "price": "1000", "category_name": None}]
+
+        with patch.object(client_handlers.database, "get_all_services", AsyncMock(return_value=services)), \
+             patch.object(client_handlers, "format_price_list_page", return_value=("page-text", 2)), \
+             patch.object(client_handlers.keyboards, "get_client_price_keyboard", return_value="price-kb"):
+            await client_handlers.price_page_cb(callback)
+
+        callback.answer.assert_awaited_once()
+        callback.message.edit_text.assert_awaited_once_with(
+            "page-text",
+            parse_mode="HTML",
+            reply_markup="price-kb",
+        )
+
     async def test_process_web_app_data_success_calls_finalize_and_clears_state(self):
         message = make_message(
             user_id=10,
@@ -113,7 +129,7 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
         finalize_mock.assert_not_awaited()
         state.clear.assert_not_awaited()
 
-    async def test_my_bookings_handler_sends_summary_and_active_cards_only(self):
+    async def test_my_bookings_handler_sends_only_active_cards_when_present(self):
         message = make_message(user_id=55)
         bookings = [
             (101, "Alice", "+100", "14.03.2026", "10:00", "scheduled"),
@@ -127,11 +143,7 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
              patch.object(client_handlers.keyboards, "get_cancel_keyboard", return_value="kb1"):
             await client_handlers.my_bookings_handler(message)
 
-        self.assertEqual(message.answer.await_count, 2)
-        first_call = message.answer.await_args_list[0]
-        self.assertIn("Мои записи", first_call.args[0])
-        self.assertIn("Активные", first_call.args[0])
-        self.assertIn("В истории", first_call.args[0])
+        self.assertEqual(message.answer.await_count, 1)
         message.answer.assert_any_await("active-card", reply_markup="kb1", parse_mode="HTML")
 
     async def test_my_bookings_handler_shows_empty_state_when_user_has_no_active_bookings(self):
@@ -189,6 +201,48 @@ class ClientFlowTests(unittest.IsolatedAsyncioTestCase):
             await client_handlers.booking_history_handler(message)
 
         message.answer.assert_awaited_once_with(ANY, parse_mode="HTML")
+
+    async def test_start_reschedule_callback_shows_date_picker_for_owner(self):
+        callback = make_callback(data="resched_1_55", user_id=1)
+        state = make_state()
+        booking = (55, 1, "Alice", "+100", "20.03.2026", "10:00", "scheduled", 60)
+
+        with patch.object(client_handlers.database, "get_booking_record_by_id", AsyncMock(return_value=booking)), \
+             patch.object(client_handlers, "_build_reschedule_date_options", AsyncMock(return_value=[("20.03 · пт", "20.03.2026")])), \
+             patch.object(client_handlers.keyboards, "get_reschedule_dates_keyboard", return_value="date-kb"):
+            await client_handlers.start_reschedule_callback(callback, state)
+
+        state.set_state.assert_awaited_once()
+        state.update_data.assert_awaited_once()
+        callback.message.answer.assert_awaited_once_with(ANY, parse_mode="HTML", reply_markup="date-kb")
+
+    async def test_reschedule_confirm_callback_updates_booking_and_notifies_admin(self):
+        callback = make_callback(data="resched_confirm_55_21.03.2026_12:30", user_id=1)
+        state = make_state(data={
+            "booking_id": 55,
+            "current_date": "20.03.2026",
+            "current_time": "10:00",
+        })
+        booking = (55, 1, "Alice", "+100", "20.03.2026", "10:00", "scheduled", 60)
+
+        with patch.object(client_handlers.database, "get_booking_record_by_id", AsyncMock(return_value=booking)), \
+             patch.object(client_handlers.database, "reschedule_booking_if_available", AsyncMock(return_value=True)) as move_mock, \
+             patch.object(client_handlers, "getenv", return_value="777"):
+            await client_handlers.reschedule_confirm_callback(callback, state)
+
+        move_mock.assert_awaited_once_with(55, "21.03.2026", "12:30")
+        callback.message.edit_text.assert_awaited_once_with(ANY, parse_mode="HTML")
+        callback.bot.send_message.assert_awaited_once()
+        state.clear.assert_awaited_once()
+
+    async def test_reschedule_cancel_callback_clears_state(self):
+        callback = make_callback(data="resched_cancel_55", user_id=1)
+        state = make_state()
+
+        await client_handlers.reschedule_cancel_callback(callback, state)
+
+        state.clear.assert_awaited_once()
+        callback.message.edit_text.assert_awaited_once_with(ANY, parse_mode="HTML")
 
 
 class ReminderFlowTests(unittest.IsolatedAsyncioTestCase):

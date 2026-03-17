@@ -84,3 +84,13 @@ class AddBlockedSlotForm(StatesGroup):
 
 class EditCurrencyForm(StatesGroup):
     symbol = State()
+
+
+class RescheduleBookingForm(StatesGroup):
+    waiting_for_date = State()
+    waiting_for_time = State()
+    waiting_for_confirmation = State()
+
+
+class SearchBookingForm(StatesGroup):
+    query = State()

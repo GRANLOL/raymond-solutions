@@ -14,6 +14,7 @@ def get_booking_status_label(status: str) -> str:
     return {
         "scheduled": "Активна",
         "completed": "Выполнена",
+        "no_show": "Не пришел",
         "cancelled": "Отменена",
     }.get(status, status)
 

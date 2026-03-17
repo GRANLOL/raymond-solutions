@@ -21,9 +21,13 @@ def _short_name(name: str, limit: int = 18) -> str:
 
 def get_cancel_keyboard(user_id: int, booking_id: int | None = None):
     callback_data = f"cancel_{user_id}_{booking_id}" if booking_id is not None else f"cancel_{user_id}"
+    reschedule_callback = f"resched_{user_id}_{booking_id}" if booking_id is not None else f"resched_{user_id}"
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="❌ Отменить запись", callback_data=callback_data)]
+            [
+                InlineKeyboardButton(text="❌ Отменить запись", callback_data=callback_data),
+                InlineKeyboardButton(text="🔁 Перенести", callback_data=reschedule_callback),
+            ]
         ]
     )
 
@@ -94,6 +98,43 @@ def get_reminder_keyboard(booking_id: int):
     return builder.as_markup()
 
 
+def get_reschedule_dates_keyboard(booking_id: int, options: list[tuple[str, str]]):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    builder = InlineKeyboardBuilder()
+    for label, date_value in options:
+        builder.row(InlineKeyboardButton(text=label, callback_data=f"resched_date_{booking_id}_{date_value}"))
+    builder.row(InlineKeyboardButton(text="❌ Отмена", callback_data=f"resched_cancel_{booking_id}"))
+    return builder.as_markup()
+
+
+def get_reschedule_times_keyboard(booking_id: int, date_value: str, times: list[str]):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    builder = InlineKeyboardBuilder()
+    row: list[InlineKeyboardButton] = []
+    for time_value in times:
+        row.append(InlineKeyboardButton(text=time_value, callback_data=f"resched_time_{booking_id}_{date_value}_{time_value}"))
+        if len(row) == 3:
+            builder.row(*row)
+            row = []
+    if row:
+        builder.row(*row)
+    builder.row(InlineKeyboardButton(text="❌ Отмена", callback_data=f"resched_cancel_{booking_id}"))
+    return builder.as_markup()
+
+
+def get_reschedule_confirm_keyboard(booking_id: int, date_value: str, time_value: str):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="✅ Подтвердить", callback_data=f"resched_confirm_{booking_id}_{date_value}_{time_value}")
+    )
+    builder.row(InlineKeyboardButton(text="❌ Отмена", callback_data=f"resched_cancel_{booking_id}"))
+    return builder.as_markup()
+
+
 def get_analytics_keyboard():
     from aiogram.utils.keyboard import InlineKeyboardBuilder
 
@@ -112,6 +153,7 @@ def get_admin_booking_page_keyboard(bookings, context: str, page: int, total_pag
     status_prefix = {
         "scheduled": "🟢",
         "completed": "✅",
+        "no_show": "🟠",
         "cancelled": "❌",
     }
     for booking_id, name, _phone, date, time, _price, status in bookings:
@@ -166,7 +208,10 @@ def get_admin_booking_actions_keyboard(
     if status == "scheduled":
         builder.row(
             InlineKeyboardButton(text="✅ Отметить выполненной", callback_data=f"admin_booking_status_{booking_id}_completed_{context}_{page}"),
-            InlineKeyboardButton(text="❌ Отменить запись", callback_data=f"admin_booking_status_{booking_id}_cancelled_{context}_{page}"),
+            InlineKeyboardButton(text="🟠 Не пришел", callback_data=f"admin_booking_status_{booking_id}_no_show_{context}_{page}"),
+        )
+        builder.row(
+            InlineKeyboardButton(text="❌ Отменить запись", callback_data=f"admin_booking_status_{booking_id}_cancelled_{context}_{page}")
         )
     else:
         builder.row(
