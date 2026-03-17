@@ -3,11 +3,11 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 
 from config import salon_config
-from .base import aiosqlite
+from .base import aiosqlite, db_connect
 from time_utils import build_reminder_schedule, combine_salon_datetime, get_salon_now
 
 async def init_db():
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         # Создаем таблицу, если её нет
         await db.execute("""
             CREATE TABLE IF NOT EXISTS bookings (

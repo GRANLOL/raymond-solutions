@@ -4,7 +4,12 @@ import re
 from datetime import datetime, timedelta
 
 import aiosqlite
+from config import DATABASE_PATH
 from time_utils import get_salon_today
+
+
+def db_connect(**kwargs):
+    return aiosqlite.connect(str(DATABASE_PATH), **kwargs)
 
 
 def _slot_overlaps(slot_start: int, slot_duration: int, busy_start: int, busy_duration: int) -> bool:

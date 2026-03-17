@@ -7,16 +7,17 @@ from aiogram.types import BotCommand
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from config import BOT_TOKEN, WEBAPP_AUTH_REQUIRED, WEBAPP_URL, salon_config
+from config import BOT_TOKEN, PORT, WEBAPP_AUTH_REQUIRED, WEBAPP_URL, salon_config
 from database import init_db, get_all_busy_slots, get_all_services, get_all_categories
 from bot_handlers import router
 from booking_service import create_booking_and_notify
 from booking_validation import validate_web_booking
+from logging_utils import configure_logging
+from rate_limit import get_rate_limit_remaining
 from reminders import start_scheduler
 from webapp_security import allowed_origins, get_init_data_validation_error, get_user_from_init_data
 
-# Setup basic logging
-logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+configure_logging()
 logger = logging.getLogger(__name__)
 
 app = FastAPI()
@@ -98,6 +99,10 @@ async def create_booking(payload: dict, x_telegram_init_data: str | None = Heade
     if not user or "id" not in user:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+    remaining = get_rate_limit_remaining(f"api_booking:{user['id']}", cooldown_seconds=8)
+    if remaining > 0:
+        raise HTTPException(status_code=429, detail=f"Слишком много попыток. Повторите через {remaining} сек.")
+
     validated, error_text = await validate_web_booking(payload)
     if error_text:
         raise HTTPException(status_code=400, detail=error_text)
@@ -132,7 +137,7 @@ async def main():
         BotCommand(command="start", description="Главное меню")
     ])
 
-    config = uvicorn.Config(app, host="0.0.0.0", port=8000)
+    config = uvicorn.Config(app, host="0.0.0.0", port=PORT)
     server = uvicorn.Server(config)
     
     logging.info("Starting bot polling and FastAPI server...")

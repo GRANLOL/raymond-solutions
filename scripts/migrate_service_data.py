@@ -7,9 +7,10 @@ from the services table by matching the service name stored in the
 import asyncio
 import aiosqlite
 import re
+from config import DATABASE_PATH
 
 async def migrate():
-    async with aiosqlite.connect("bookings.db") as db:
+    async with aiosqlite.connect(str(DATABASE_PATH)) as db:
         db.row_factory = aiosqlite.Row
 
         # Fetch all services into a lookup dict: name -> price

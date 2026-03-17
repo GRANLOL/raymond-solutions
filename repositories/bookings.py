@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .base import _slot_overlaps, _time_to_minutes, _to_iso_date, aiosqlite, datetime
+from .base import _slot_overlaps, _time_to_minutes, _to_iso_date, aiosqlite, db_connect, datetime
 from time_utils import build_reminder_schedule, combine_salon_datetime, get_salon_now, get_salon_today
 
 
@@ -21,7 +21,7 @@ def _booking_datetime(date: str, time: str):
 async def sync_completed_bookings() -> int:
     now = get_salon_now()
     updated = 0
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT id, date, time, duration
@@ -57,7 +57,7 @@ async def add_booking(user_id, name, phone, date, time, duration=60, service_nam
     date_iso = _to_iso_date(date)
     booking_dt = _booking_datetime(date, time)
     schedule = build_reminder_schedule(booking_dt)
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         await db.execute(
             """
             INSERT INTO bookings (
@@ -88,7 +88,7 @@ async def create_booking_if_available(
     if slot_start is None:
         return False
 
-    async with aiosqlite.connect("bookings.db", timeout=30) as db:
+    async with db_connect(timeout=30) as db:
         await db.execute("BEGIN IMMEDIATE")
 
         async with db.execute(
@@ -125,7 +125,7 @@ async def create_booking_if_available(
 
 
 async def get_booked_slots(date):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             "SELECT time FROM bookings WHERE date = ? AND status = 'scheduled'",
             (date,),
@@ -135,7 +135,7 @@ async def get_booked_slots(date):
 
 
 async def get_busy_slots_by_date(date: str):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             "SELECT time, duration FROM bookings WHERE date = ? AND status = 'scheduled'",
             (date,),
@@ -159,7 +159,7 @@ async def get_busy_slots_by_date(date: str):
 
 
 async def get_all_bookings():
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT b.name, b.phone, b.date, b.time, b.price
@@ -172,7 +172,7 @@ async def get_all_bookings():
 
 
 async def get_all_bookings_detailed():
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT b.id, b.name, b.phone, b.date, b.time, b.price, b.status
@@ -184,13 +184,13 @@ async def get_all_bookings_detailed():
 
 
 async def clear_bookings():
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         await db.execute("DELETE FROM bookings")
         await db.commit()
 
 
 async def get_bookings_by_date_full(target_date: str):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT b.name, b.phone, b.date, b.time, b.price
@@ -204,7 +204,7 @@ async def get_bookings_by_date_full(target_date: str):
 
 
 async def get_bookings_by_date_detailed(target_date: str):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT b.id, b.name, b.phone, b.date, b.time, b.price, b.status
@@ -218,7 +218,7 @@ async def get_bookings_by_date_detailed(target_date: str):
 
 
 async def get_user_booking(user_id: int):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT name, phone, date, time, id
@@ -233,7 +233,7 @@ async def get_user_booking(user_id: int):
 
 
 async def get_user_bookings(user_id: int):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT id, name, phone, date, time, status
@@ -255,7 +255,7 @@ async def get_user_bookings(user_id: int):
 
 
 async def cancel_booking_by_id(booking_id: int):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         await db.execute(
             """
             UPDATE bookings
@@ -269,13 +269,13 @@ async def cancel_booking_by_id(booking_id: int):
 
 
 async def delete_booking_by_id(booking_id: int):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         await db.execute("DELETE FROM bookings WHERE id = ?", (booking_id,))
         await db.commit()
 
 
 async def get_booking_record_by_id(booking_id: int):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT id, user_id, name, phone, date, time, status, duration
@@ -289,7 +289,7 @@ async def get_booking_record_by_id(booking_id: int):
 
 async def update_booking_status(booking_id: int, status: str):
     now_iso = get_salon_now().isoformat()
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         if status == "completed":
             await db.execute(
                 """
@@ -343,7 +343,7 @@ async def reschedule_booking_if_available(booking_id: int, date: str, time: str)
     if slot_start is None:
         return False
 
-    async with aiosqlite.connect("bookings.db", timeout=30) as db:
+    async with db_connect(timeout=30) as db:
         await db.execute("BEGIN IMMEDIATE")
 
         async with db.execute(
@@ -418,7 +418,7 @@ async def reschedule_booking_if_available(booking_id: int, date: str, time: str)
 
 
 async def get_due_first_reminders(now_iso: str):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT id, user_id, name, date, time, first_reminder_due_at
@@ -434,7 +434,7 @@ async def get_due_first_reminders(now_iso: str):
 
 
 async def get_due_second_reminders(now_iso: str):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT id, user_id, name, date, time, second_reminder_due_at
@@ -450,7 +450,7 @@ async def get_due_second_reminders(now_iso: str):
 
 
 async def get_booking_by_id(booking_id: int):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT name, phone, date, time, user_id, status
@@ -464,7 +464,7 @@ async def get_booking_by_id(booking_id: int):
 
 async def search_bookings(query: str, limit: int = 10):
     like_query = f"%{query.strip()}%"
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             """
             SELECT id, name, phone, date, time, status
@@ -482,7 +482,7 @@ async def search_bookings(query: str, limit: int = 10):
 
 
 async def mark_first_reminder_sent(booking_id: int, sent_at: str):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         await db.execute(
             """
             UPDATE bookings
@@ -495,7 +495,7 @@ async def mark_first_reminder_sent(booking_id: int, sent_at: str):
 
 
 async def mark_second_reminder_sent(booking_id: int, sent_at: str):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         await db.execute(
             """
             UPDATE bookings
@@ -508,7 +508,7 @@ async def mark_second_reminder_sent(booking_id: int, sent_at: str):
 
 
 async def delete_bookings_by_date(target_date: str):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute("SELECT COUNT(id) FROM bookings WHERE date = ?", (target_date,)) as cursor:
             count = (await cursor.fetchone())[0]
         if count > 0:
@@ -524,7 +524,7 @@ async def delete_bookings_by_period(start_date: str, end_date: str):
     except ValueError:
         return 0
 
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             "SELECT COUNT(id) FROM bookings WHERE date_iso IS NOT NULL AND date_iso BETWEEN ? AND ?",
             (start_iso, end_iso),
@@ -541,7 +541,7 @@ async def delete_bookings_by_period(start_date: str, end_date: str):
 
 async def delete_past_bookings():
     today_iso = get_salon_today().isoformat()
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             "SELECT COUNT(id) FROM bookings WHERE date_iso IS NOT NULL AND date_iso < ?",
             (today_iso,),
@@ -555,7 +555,7 @@ async def delete_past_bookings():
 
 async def add_blocked_slot(date: str, start_time: str, end_time: str, reason: str | None = None):
     date_iso = _to_iso_date(date)
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         await db.execute(
             """
             INSERT INTO blocked_slots (date, date_iso, start_time, end_time, reason)
@@ -567,7 +567,7 @@ async def add_blocked_slot(date: str, start_time: str, end_time: str, reason: st
 
 
 async def get_blocked_slots(date: str | None = None):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         if date is None:
             query = """
                 SELECT id, date, start_time, end_time, reason
@@ -588,7 +588,7 @@ async def get_blocked_slots(date: str | None = None):
 
 
 async def delete_blocked_slot(blocked_slot_id: int):
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         await db.execute("DELETE FROM blocked_slots WHERE id = ?", (blocked_slot_id,))
         await db.commit()
 
@@ -596,7 +596,7 @@ async def delete_blocked_slot(blocked_slot_id: int):
 async def get_all_busy_slots():
     from collections import defaultdict
 
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute(
             "SELECT date, time, duration FROM bookings WHERE status = 'scheduled'"
         ) as cursor:

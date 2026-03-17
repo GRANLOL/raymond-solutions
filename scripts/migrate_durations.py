@@ -1,8 +1,9 @@
 import sqlite3
 import random
+from config import DATABASE_PATH
 
 def migrate():
-    conn = sqlite3.connect('c:/Users/User/Desktop/Main Project/bookings.db')
+    conn = sqlite3.connect(str(DATABASE_PATH))
     cursor = conn.cursor()
     
     # Get all service IDs

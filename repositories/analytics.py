@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from .base import _parse_booking_date, _period_start_date, aiosqlite
+from .base import _parse_booking_date, _period_start_date, aiosqlite, db_connect
 
 async def _get_bookings_in_period(period_days: int):
     start_date = _period_start_date(period_days)
     end_date = _period_start_date(0)
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute("""
             SELECT date, time, price, service_name, phone
             FROM bookings
@@ -73,7 +73,7 @@ async def get_client_stats(period_days: int) -> dict:
     period_phones = {item["phone"] for item in period_bookings if item["phone"]}
     period_start = _period_start_date(period_days)
 
-    async with aiosqlite.connect("bookings.db") as db:
+    async with db_connect() as db:
         async with db.execute("SELECT phone, date FROM bookings") as cursor:
             rows = await cursor.fetchall()
 

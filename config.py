@@ -1,15 +1,22 @@
 import os
 import json
+from pathlib import Path
 from dotenv import load_dotenv
 
 load_dotenv()
 
-with open("config.json", mode="r", encoding="utf-8") as f:
+PROJECT_ROOT = Path(__file__).resolve().parent
+CONFIG_PATH = Path(os.getenv("CONFIG_PATH", PROJECT_ROOT / "config.json")).resolve()
+DATABASE_PATH = Path(os.getenv("DATABASE_PATH", PROJECT_ROOT / "bookings.db")).resolve()
+PORT = int(os.getenv("PORT", "8000"))
+
+with CONFIG_PATH.open(mode="r", encoding="utf-8") as f:
     salon_config = json.load(f)
 
 def update_config(key: str, value):
     salon_config[key] = value
-    with open("config.json", mode="w", encoding="utf-8") as f:
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with CONFIG_PATH.open(mode="w", encoding="utf-8") as f:
         json.dump(salon_config, f, ensure_ascii=False, indent=2)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
