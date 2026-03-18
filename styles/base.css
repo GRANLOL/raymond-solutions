@@ -239,7 +239,7 @@ body {
 
 @media (orientation: landscape) and (max-height: 560px) {
     .app-wrapper {
-        max-width: min(100%, 960px);
+        max-width: 100%;
         min-height: 100vh;
     }
 
@@ -293,46 +293,25 @@ body {
     }
 
     .container {
-        padding: 16px 16px 28px 16px;
-        gap: 10px 16px;
-        display: grid;
-        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
-        align-items: start;
-    }
-
-    .container > :nth-child(1),
-    .container > :nth-child(2),
-    .container > :nth-child(11),
-    .container > :nth-child(12) {
-        grid-column: 1 / -1;
-    }
-
-    .container > :nth-child(3),
-    .container > :nth-child(4),
-    .container > :nth-child(7),
-    .container > :nth-child(8) {
-        grid-column: 1;
-    }
-
-    .container > :nth-child(5),
-    .container > :nth-child(6),
-    .container > :nth-child(9),
-    .container > :nth-child(10) {
-        grid-column: 2;
+        padding: 14px 14px 24px 14px;
+        gap: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
     }
 
     .section-title {
         font-size: 13px;
-        margin-bottom: 2px;
+        margin-bottom: 4px;
         margin-left: 2px;
     }
 
     .mb-24 {
-        margin-bottom: 0;
+        margin-bottom: 8px;
     }
 
     .footer-note {
-        margin-top: 2px;
+        margin-top: 0;
         gap: 6px;
         font-size: 11px;
     }
