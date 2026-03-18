@@ -1,7 +1,7 @@
-import { tg } from '../telegram.js';
-import { store } from '../store.js';
-import { submitData } from './submit.js';
-import { checkConfirmation } from './form.js';
+import { tg } from '../telegram.js?v=5';
+import { store } from '../store.js?v=5';
+import { submitData } from './submit.js?v=5';
+import { checkConfirmation } from './form.js?v=5';
 
 const modal = document.getElementById('confirm-modal');
 const modalService = document.getElementById('modal-service');

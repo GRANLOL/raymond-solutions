@@ -1,8 +1,8 @@
-import { tg } from '../telegram.js';
-import { store } from '../store.js';
-import { config } from '../config.js';
-import { getFormIssues } from './form.js';
-import { showToast } from './toast.js';
+import { tg } from '../telegram.js?v=5';
+import { store } from '../store.js?v=5';
+import { config } from '../config.js?v=5';
+import { getFormIssues } from './form.js?v=5';
+import { showToast } from './toast.js?v=5';
 
 async function postBooking(data) {
     const headers = {

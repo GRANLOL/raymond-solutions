@@ -1,6 +1,6 @@
-import { config } from './config.js';
-import { store } from './store.js';
-import { tg } from './telegram.js';
+import { config } from './config.js?v=5';
+import { store } from './store.js?v=5';
+import { tg } from './telegram.js?v=5';
 
 const API_BASE_URL = config.apiBaseUrl;
 
