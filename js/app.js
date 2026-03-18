@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.addEventListener('touchstart', function () { }, { passive: true });
     document.addEventListener('touchmove', function () { }, { passive: true });
 
+    applyHeaderBranding();
     initTelegram();
 
     const nameInput = document.getElementById('name-input');

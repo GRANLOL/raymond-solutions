@@ -156,6 +156,10 @@ body {
     padding-bottom: 24px;
 }
 
+.salon-header--text-only .salon-logo-placeholder {
+    display: none;
+}
+
 .salon-header--text-only .salon-name {
     font-size: 26px;
     letter-spacing: -0.03em;
