@@ -44,7 +44,7 @@ function renderTriggerLabel(serviceObj) {
 
     selectLabel.replaceChildren(title);
 
-    const durationText = formatServiceDuration(serviceObj?.duration);
+    const durationText = store.showServiceDuration ? formatServiceDuration(serviceObj?.duration) : '';
     const priceText = formatServicePrice(serviceObj?.price);
     const metaParts = [durationText, priceText].filter(Boolean);
 
@@ -160,7 +160,7 @@ export function createServiceOption(serviceObj) {
     price.textContent = formatServicePrice(serviceObj.price);
 
     info.appendChild(name);
-    if (duration.textContent) {
+    if (store.showServiceDuration && duration.textContent) {
         meta.appendChild(duration);
     }
     if (price.textContent) {
@@ -224,7 +224,7 @@ export function populateServices(searchQuery = '') {
         const filtered = store.dynamicServices.filter((service) => {
             const nameText = String(service.name ?? '').toLowerCase();
             const priceText = formatServicePrice(service.price).toLowerCase();
-            const durationText = formatServiceDuration(service.duration).toLowerCase();
+            const durationText = store.showServiceDuration ? formatServiceDuration(service.duration).toLowerCase() : '';
             return nameText.includes(query) || priceText.includes(query) || durationText.includes(query);
         });
         if (filtered.length === 0) {

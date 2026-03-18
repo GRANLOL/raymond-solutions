@@ -16,6 +16,7 @@ export const store = {
     scheduleInterval: 30,
     selectedDuration: 60,
     timezoneOffset: 3,
+    showServiceDuration: true,
     currencySymbol: '₸',
     months: ["Января", "Февраля", "Марта", "Апреля", "Мая", "Июня", "Июля", "Августа", "Сентября", "Октября", "Ноября", "Декабря"],
     shortMonths: ["Янв", "Фев", "Мар", "Апр", "Май", "Июн", "Июл", "Авг", "Сен", "Окт", "Ноя", "Дек"],

@@ -37,11 +37,13 @@ def get_system_settings_keyboard():
     from aiogram.utils.keyboard import InlineKeyboardBuilder
 
     builder = InlineKeyboardBuilder()
+    duration_enabled = bool(salon_config.get("show_service_duration", True))
     builder.row(InlineKeyboardButton(text="📬 Настройки напоминаний", callback_data="settings_reminders"))
     builder.row(InlineKeyboardButton(text="🌌 Часовой пояс (UTC)", callback_data="settings_timezone"))
     builder.row(InlineKeyboardButton(text="🕒 Часы работы", callback_data="settings_working_hours"))
     builder.row(InlineKeyboardButton(text="⏳ Шаг записи", callback_data="settings_interval"))
     builder.row(InlineKeyboardButton(text=f"💱 Валюта: {salon_config.get('currency_symbol', '₸')}", callback_data="settings_currency"))
+    builder.row(InlineKeyboardButton(text=f"⏱ Длительность услуг: {'вкл' if duration_enabled else 'выкл'}", callback_data="toggle_service_duration_visibility"))
     builder.row(InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_admin_action"))
     return builder.as_markup()
 

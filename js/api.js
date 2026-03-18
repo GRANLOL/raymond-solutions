@@ -72,6 +72,9 @@ export async function fetchContent() {
             if (data.currency_symbol) {
                 store.currencySymbol = data.currency_symbol;
             }
+            if (data.show_service_duration !== undefined) {
+                store.showServiceDuration = Boolean(data.show_service_duration);
+            }
         }
     } catch (e) {
         console.error("Error fetching available content:", e);
@@ -81,6 +84,7 @@ export async function fetchContent() {
         store.dynamicBookingWindow = 7;
         store.workingDays = [1, 2, 3, 4, 5, 6, 0];
         store.blacklistedDates = [];
+        store.showServiceDuration = true;
         store.currencySymbol = '₸';
     }
 }

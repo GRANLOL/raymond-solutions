@@ -83,6 +83,7 @@ async def get_content(x_telegram_init_data: str | None = Header(default=None)) -
     working_hours = salon_config.get("working_hours", "10:00-20:00")
     schedule_interval = salon_config.get("schedule_interval", 30)
     timezone_offset = salon_config.get("timezone_offset", 3)
+    show_service_duration = bool(salon_config.get("show_service_duration", True))
     currency_symbol = salon_config.get("currency_symbol", "₸")
 
     return {
@@ -95,6 +96,7 @@ async def get_content(x_telegram_init_data: str | None = Header(default=None)) -
         "schedule_interval": schedule_interval,
         "timezone_offset": timezone_offset,
         "currency_symbol": currency_symbol,
+        "show_service_duration": show_service_duration,
     }
 
 

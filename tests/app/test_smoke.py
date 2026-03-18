@@ -28,6 +28,7 @@ class AppSmokeTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("services", content)
         self.assertIn("categories", content)
         self.assertIn("booking_window", content)
+        self.assertIn("show_service_duration", content)
 
     async def test_create_booking_returns_success_payload(self):
         with patch.object(main, "require_webapp_auth"), \

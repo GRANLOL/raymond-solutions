@@ -138,6 +138,19 @@ class SettingsHandlerTests(unittest.IsolatedAsyncioTestCase):
         message.answer.assert_awaited_once_with(ANY, reply_markup="kb")
         state.clear.assert_not_awaited()
 
+    async def test_toggle_service_duration_visibility_updates_config_and_rerenders_menu(self):
+        callback = make_callback(data="toggle_service_duration_visibility", user_id=1)
+
+        with patch.object(settings_handlers, "getenv", return_value="1"), \
+             patch.object(settings_handlers, "update_config") as update_mock, \
+             patch.object(settings_handlers.keyboards, "get_system_settings_keyboard", return_value="kb"), \
+             patch.dict(settings_handlers.salon_config, {"show_service_duration": True}, clear=False):
+            await settings_handlers.toggle_service_duration_visibility_callback(callback)
+
+        update_mock.assert_called_once_with("show_service_duration", False)
+        callback.message.edit_text.assert_awaited_once_with(ANY, parse_mode="HTML", reply_markup="kb")
+        callback.answer.assert_awaited_once()
+
     async def test_process_working_hours_rejects_invalid_format(self):
         message = make_message(text="10-20")
         state = make_state()

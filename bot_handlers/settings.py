@@ -161,6 +161,22 @@ async def settings_currency_callback(callback: types.CallbackQuery):
     )
 
 
+@router.callback_query(F.data == "toggle_service_duration_visibility")
+async def toggle_service_duration_visibility_callback(callback: types.CallbackQuery):
+    if not _is_admin(callback.from_user.id):
+        return
+    await callback.answer()
+
+    new_value = not bool(salon_config.get("show_service_duration", True))
+    update_config("show_service_duration", new_value)
+    status_text = "включено" if new_value else "выключено"
+    await callback.message.edit_text(
+        f"⚙️ <b>Настройки системы</b>\n\nОтображение длительности услуг {status_text}.",
+        parse_mode="HTML",
+        reply_markup=keyboards.get_system_settings_keyboard(),
+    )
+
+
 @router.callback_query(F.data.startswith("set_currency_"))
 async def set_currency_callback(callback: types.CallbackQuery, state: FSMContext):
     if not _is_admin(callback.from_user.id):
