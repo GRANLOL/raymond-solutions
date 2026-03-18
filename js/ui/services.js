@@ -21,15 +21,15 @@ function formatServicePrice(priceValue) {
 
 function getUnavailableServiceMessage(reason) {
     if (reason === 'outside_working_hours') {
-        return 'Эта услуга не помещается в выбранное время. Выберите более ранний слот или другую услугу.';
+        return 'Эта услуга не помещается в выбранное время. Выберите более раннее время или другую дату.';
     }
     if (reason === 'busy_overlap') {
-        return 'Для этой услуги выбранное время уже не подходит. Выберите другой слот или более короткую услугу.';
+        return 'На выбранное время эта услуга недоступна. Выберите более раннее время или другую дату.';
     }
     if (reason === 'past') {
-        return 'Выбранное время уже прошло. Обновите слот и попробуйте снова.';
+        return 'Выбранное время уже прошло. Выберите другой слот или другую дату.';
     }
-    return 'Эта услуга сейчас недоступна для выбранных даты и времени.';
+    return 'Эта услуга сейчас недоступна для выбранных даты и времени. Выберите более раннее время или другую дату.';
 }
 
 function getServiceAvailability(serviceObj) {
@@ -75,7 +75,7 @@ function syncDateTimeSelectionAfterServiceChange() {
         generateTimes();
         showToast({
             title: 'Дата обновлена',
-            message: 'Для этой услуги на выбранную дату больше нет свободных окон. Выберите другую дату.',
+            message: 'Для этой услуги на выбранную дату больше нет подходящих окон. Выберите более раннее время или другую дату.',
             variant: 'neutral',
         });
         return;
@@ -85,7 +85,7 @@ function syncDateTimeSelectionAfterServiceChange() {
         store.selectedTime = null;
         showToast({
             title: 'Время обновлено',
-            message: 'Для этой услуги нужен другой слот. Выберите подходящее время.',
+            message: 'Для этой услуги выбранное время не подходит. Выберите более раннее время или другую дату.',
             variant: 'neutral',
         });
     }
@@ -223,7 +223,7 @@ export function populateServices(searchQuery = '') {
             if (!hasSelectableContent) {
                 showToast({
                     title: 'Нет доступных услуг',
-                    message: 'Для выбранных даты и времени услуги из этого раздела сейчас недоступны.',
+                    message: 'Для выбранных даты и времени услуги из этого раздела сейчас недоступны. Выберите более раннее время или другую дату.',
                     variant: 'neutral',
                 });
                 return;
