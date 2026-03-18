@@ -35,7 +35,7 @@ def get_cancel_keyboard(user_id: int, booking_id: int | None = None):
 def get_booking_launch_keyboard():
     return InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text="📲 Открыть запись", web_app=WebAppInfo(url=WEBAPP_URL))]
+            [InlineKeyboardButton(text="📅 Открыть запись", web_app=WebAppInfo(url=WEBAPP_URL))]
         ]
     )
 
