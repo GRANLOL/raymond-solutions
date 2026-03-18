@@ -166,6 +166,15 @@ export function generateDates() {
 export function generateTimes(formattedDate = null) {
     const timeGrid = document.getElementById('time-grid');
     timeGrid.innerHTML = '';
+
+    if (!formattedDate) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'time-grid-empty';
+        emptyState.textContent = 'Сначала выберите дату, чтобы увидеть доступное время.';
+        timeGrid.appendChild(emptyState);
+        return;
+    }
+
     const busyArr = formattedDate && store.busySlots[formattedDate] ? store.busySlots[formattedDate] : [];
 
     // Use regex to strictly extract HH:MM pairs, ignoring other text like day labels
@@ -200,6 +209,8 @@ export function generateTimes(formattedDate = null) {
     if (formattedDate === salonTodayStr) {
         currentSalonMins = salonNow.getHours() * 60 + salonNow.getMinutes();
     }
+
+    let renderedSlots = 0;
 
     for (let m = startMins; m + serviceDur <= endMins; m += interval) {
         // Skip past slots entirely
@@ -240,6 +251,14 @@ export function generateTimes(formattedDate = null) {
         }
 
         timeGrid.appendChild(slot);
+        renderedSlots += 1;
+    }
+
+    if (renderedSlots === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'time-grid-empty';
+        emptyState.textContent = 'На эту дату сейчас нет подходящих слотов. Выберите другую дату.';
+        timeGrid.appendChild(emptyState);
     }
 }
 
