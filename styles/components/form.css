@@ -33,8 +33,15 @@
 }
 
 .booking-action-bar {
-    position: sticky;
+    position: fixed;
+    left: 50%;
     bottom: 0;
+    transform: translateX(-50%);
+    width: min(440px, 100%);
+    box-sizing: border-box;
+    z-index: 120;
+    padding-left: 20px;
+    padding-right: 20px;
     padding-top: 14px;
     padding-bottom: max(8px, env(safe-area-inset-bottom));
     margin-top: 12px;
