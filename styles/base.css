@@ -248,20 +248,17 @@ body {
         min-height: auto;
         border-bottom-left-radius: 28px;
         border-bottom-right-radius: 28px;
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr);
-        column-gap: 14px;
-        row-gap: 4px;
+        display: flex;
+        flex-direction: column;
         align-items: center;
-        justify-items: start;
-        text-align: left;
+        justify-content: center;
+        text-align: center;
     }
 
     .salon-logo-placeholder {
         width: 52px;
         height: 52px;
-        margin: 0;
-        grid-row: 1 / 3;
+        margin: 0 auto 10px auto;
         font-size: 22px;
     }
 
@@ -278,8 +275,6 @@ body {
 
     .salon-header--text-only {
         padding: 16px 18px;
-        grid-template-columns: 1fr;
-        justify-items: center;
         text-align: center;
         row-gap: 6px;
     }

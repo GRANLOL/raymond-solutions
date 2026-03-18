@@ -174,44 +174,49 @@
     .modal-overlay {
         align-items: center;
         padding: 14px;
+        overflow-y: auto;
     }
 
     .modal-card {
         max-width: min(720px, 100%);
+        max-height: calc(100vh - 28px);
         margin-bottom: 0;
-        padding: 24px 20px;
+        padding: 20px 18px;
         border-radius: 24px;
+        overflow-y: auto;
     }
 
     .modal-title {
-        font-size: 20px;
-        margin-bottom: 14px;
+        font-size: 18px;
+        margin-bottom: 12px;
     }
 
     .modal-summary {
-        padding: 16px;
-        margin-bottom: 18px;
+        padding: 14px;
+        margin-bottom: 14px;
     }
 
     .modal-summary p {
-        font-size: 14px;
-        grid-template-columns: minmax(72px, 96px) minmax(0, 1fr);
-        gap: 8px 12px;
-        margin-bottom: 10px;
+        font-size: 13px;
+        grid-template-columns: minmax(64px, 88px) minmax(0, 1fr);
+        gap: 6px 10px;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
     }
 
     .modal-btn {
-        padding: 14px 0;
-        font-size: 15px;
+        padding: 12px 0;
+        font-size: 14px;
     }
 
     .privacy-copy {
-        gap: 10px;
-        margin-bottom: 18px;
-        font-size: 13px;
+        gap: 8px;
+        margin-bottom: 14px;
+        font-size: 12px;
+        line-height: 1.45;
     }
 
     .privacy-copy p {
-        padding: 12px 14px;
+        padding: 10px 12px;
     }
 }
