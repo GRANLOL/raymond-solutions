@@ -213,6 +213,7 @@ async def send_client_home(message: types.Message, *, text: str, is_admin: bool)
         parse_mode="HTML",
         reply_markup=keyboards.get_booking_launch_keyboard(),
     )
+    await message.answer("⠀", reply_markup=keyboards.get_main_menu(is_admin=is_admin))
 
 
 @router.message(Command("start"))
