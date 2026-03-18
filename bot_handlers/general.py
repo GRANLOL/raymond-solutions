@@ -209,7 +209,12 @@ async def _show_booking_list(message_or_callback, *, context: str, page: int = 0
 
 async def send_client_home(message: types.Message, *, text: str, is_admin: bool) -> None:
     await message.answer(text, parse_mode="HTML", reply_markup=keyboards.get_booking_launch_keyboard())
-    await message.answer("👤 <b>Меню клиента обновлено</b>", parse_mode="HTML", reply_markup=keyboards.get_main_menu(is_admin=is_admin))
+    await message.answer(
+        "👤 <b>Клиентское меню</b>\n\n"
+        "Здесь можно посмотреть свои записи, историю и быстро вернуться к оформлению новой записи.",
+        parse_mode="HTML",
+        reply_markup=keyboards.get_main_menu(is_admin=is_admin),
+    )
 
 
 @router.message(Command("start"))
@@ -236,7 +241,15 @@ async def client_menu_handler(message: types.Message):
     is_admin = bool(admin_id and str(message.from_user.id) == admin_id)
     if not is_admin:
         return
-    await send_client_home(message, text="👤 <b>Главное меню клиента</b>\n\nЗдесь можно оформить новую запись и посмотреть актуальную информацию.", is_admin=is_admin)
+    await send_client_home(
+        message,
+        text=(
+            "👤 <b>Клиентский кабинет</b>\n\n"
+            "Откройте запись, чтобы выбрать услугу, дату и удобное время. "
+            "Актуальные записи и дополнительные действия доступны ниже."
+        ),
+        is_admin=is_admin,
+    )
 
 
 @router.message(Command("admin"))

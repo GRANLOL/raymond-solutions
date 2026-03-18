@@ -8,6 +8,17 @@ import { initModal } from './ui/modal.js';
 import { initPrivacyModal } from './ui/privacy.js';
 import './ui/toast.js';
 
+const SAVED_PHONE_KEY = 'savedBookingPhone';
+
+function loadSavedPhone() {
+    try {
+        return window.localStorage.getItem(SAVED_PHONE_KEY) || '';
+    } catch (error) {
+        console.warn('Unable to read saved phone from localStorage:', error);
+        return '';
+    }
+}
+
 function ensureTaglineElement(header) {
     let taglineEl = header.querySelector('.salon-tagline');
     if (!taglineEl) {
@@ -75,10 +86,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     initTelegram();
 
     const nameInput = document.getElementById('name-input');
+    const phoneInput = document.getElementById('phone-input');
     // Pre-fill user name from Telegram WebApp Context
     if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
         nameInput.value = tg.initDataUnsafe.user.first_name || '';
     }
+    phoneInput.value = loadSavedPhone();
 
     // Wiring up listeners
     initServiceListeners();

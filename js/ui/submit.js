@@ -4,6 +4,16 @@ import { config } from '../config.js';
 import { getFormIssues } from './form.js';
 import { showToast } from './toast.js';
 
+const SAVED_PHONE_KEY = 'savedBookingPhone';
+
+function persistPhone(phone) {
+    try {
+        window.localStorage.setItem(SAVED_PHONE_KEY, phone);
+    } catch (error) {
+        console.warn('Unable to persist phone in localStorage:', error);
+    }
+}
+
 async function postBooking(data) {
     const headers = {
         'Content-Type': 'application/json',
@@ -66,6 +76,7 @@ export async function submitData() {
 
     try {
         await postBooking(data);
+        persistPhone(phoneInput.value);
 
         modal.classList.remove('active');
 
