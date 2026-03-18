@@ -169,3 +169,49 @@
     border-radius: 16px;
     padding: 14px 16px;
 }
+
+@media (orientation: landscape) and (max-height: 560px) {
+    .modal-overlay {
+        align-items: center;
+        padding: 14px;
+    }
+
+    .modal-card {
+        max-width: min(720px, 100%);
+        margin-bottom: 0;
+        padding: 24px 20px;
+        border-radius: 24px;
+    }
+
+    .modal-title {
+        font-size: 20px;
+        margin-bottom: 14px;
+    }
+
+    .modal-summary {
+        padding: 16px;
+        margin-bottom: 18px;
+    }
+
+    .modal-summary p {
+        font-size: 14px;
+        grid-template-columns: minmax(72px, 96px) minmax(0, 1fr);
+        gap: 8px 12px;
+        margin-bottom: 10px;
+    }
+
+    .modal-btn {
+        padding: 14px 0;
+        font-size: 15px;
+    }
+
+    .privacy-copy {
+        gap: 10px;
+        margin-bottom: 18px;
+        font-size: 13px;
+    }
+
+    .privacy-copy p {
+        padding: 12px 14px;
+    }
+}

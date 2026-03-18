@@ -191,3 +191,47 @@
     animation: fadeIn 0.4s ease-out forwards;
     opacity: 0;
 }
+
+@media (orientation: landscape) and (max-height: 560px) {
+    .date-container {
+        gap: 8px;
+        padding-bottom: 10px;
+        margin-right: 0;
+        padding-right: 0;
+    }
+
+    .date-card {
+        min-width: 52px;
+        height: 62px;
+    }
+
+    .date-day {
+        font-size: 10px;
+        margin-bottom: 3px;
+    }
+
+    .date-num {
+        font-size: 16px;
+    }
+
+    .date-month {
+        font-size: 9px;
+    }
+
+    .time-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        min-height: 48px;
+    }
+
+    .time-slot {
+        height: 48px;
+        font-size: 15px;
+    }
+
+    .time-grid-empty {
+        min-height: 48px;
+        padding: 12px 14px;
+        font-size: 13px;
+    }
+}

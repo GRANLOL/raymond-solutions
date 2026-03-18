@@ -137,3 +137,37 @@
     font-weight: 500;
     text-align: left;
 }
+
+@media (orientation: landscape) and (max-height: 560px) {
+    .success-screen {
+        padding: 14px;
+    }
+
+    .success-card {
+        max-width: min(640px, 100%);
+        padding: 28px 20px;
+        border-radius: 24px;
+    }
+
+    .success-icon {
+        width: 68px;
+        height: 68px;
+        margin-bottom: 18px;
+    }
+
+    .success-title {
+        font-size: 22px;
+        margin-bottom: 18px;
+    }
+
+    .success-summary {
+        padding: 16px;
+    }
+
+    .success-summary p {
+        font-size: 13px;
+        grid-template-columns: minmax(68px, 90px) minmax(0, 1fr);
+        gap: 8px 12px;
+        margin-bottom: 10px;
+    }
+}

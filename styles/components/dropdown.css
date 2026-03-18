@@ -365,3 +365,49 @@ body.dropdown-open::before {
     background-color: rgba(212, 175, 55, 0.15);
     color: var(--accent-hover);
 }
+
+@media (orientation: landscape) and (max-height: 560px) {
+    .custom-select-trigger {
+        padding: 14px 16px;
+        font-size: 15px;
+    }
+
+    .custom-options {
+        max-height: 54vh;
+    }
+
+    .search-container {
+        padding: 10px 12px;
+    }
+
+    .search-input {
+        padding: 10px 14px;
+        font-size: 14px;
+    }
+
+    .cat-header {
+        padding: 13px 16px;
+    }
+
+    .subcat-header {
+        padding: 10px 16px 10px 22px;
+    }
+
+    .custom-option {
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    .cat-body .custom-option {
+        padding-left: 22px;
+    }
+
+    .subcat-body .custom-option {
+        padding-left: 28px;
+    }
+
+    .service-price {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+}

@@ -236,3 +236,104 @@ body {
     cursor: pointer;
     padding: 0;
 }
+
+@media (orientation: landscape) and (max-height: 560px) {
+    .app-wrapper {
+        max-width: min(100%, 960px);
+        min-height: 100vh;
+    }
+
+    .salon-header {
+        padding: 14px 18px;
+        min-height: auto;
+        border-bottom-left-radius: 28px;
+        border-bottom-right-radius: 28px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr);
+        column-gap: 14px;
+        row-gap: 4px;
+        align-items: center;
+        justify-items: start;
+        text-align: left;
+    }
+
+    .salon-logo-placeholder {
+        width: 52px;
+        height: 52px;
+        margin: 0;
+        grid-row: 1 / 3;
+        font-size: 22px;
+    }
+
+    .salon-name {
+        font-size: 20px;
+        line-height: 1.1;
+    }
+
+    .salon-tagline {
+        margin-top: 0;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+    }
+
+    .salon-header--text-only {
+        padding: 16px 18px;
+        grid-template-columns: 1fr;
+        justify-items: center;
+        text-align: center;
+        row-gap: 6px;
+    }
+
+    .salon-header--text-only::before {
+        margin-bottom: 4px;
+    }
+
+    .salon-header--text-only .salon-name {
+        font-size: 22px;
+    }
+
+    .container {
+        padding: 16px 16px 28px 16px;
+        gap: 10px 16px;
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        align-items: start;
+    }
+
+    .container > :nth-child(1),
+    .container > :nth-child(2),
+    .container > :nth-child(11),
+    .container > :nth-child(12) {
+        grid-column: 1 / -1;
+    }
+
+    .container > :nth-child(3),
+    .container > :nth-child(4),
+    .container > :nth-child(7),
+    .container > :nth-child(8) {
+        grid-column: 1;
+    }
+
+    .container > :nth-child(5),
+    .container > :nth-child(6),
+    .container > :nth-child(9),
+    .container > :nth-child(10) {
+        grid-column: 2;
+    }
+
+    .section-title {
+        font-size: 13px;
+        margin-bottom: 2px;
+        margin-left: 2px;
+    }
+
+    .mb-24 {
+        margin-bottom: 0;
+    }
+
+    .footer-note {
+        margin-top: 2px;
+        gap: 6px;
+        font-size: 11px;
+    }
+}
