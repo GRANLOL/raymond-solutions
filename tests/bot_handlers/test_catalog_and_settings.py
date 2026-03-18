@@ -160,3 +160,15 @@ class SettingsHandlerTests(unittest.IsolatedAsyncioTestCase):
 
         message.answer.assert_awaited_once_with(ANY, parse_mode="HTML", reply_markup="kb")
         state.clear.assert_not_awaited()
+
+    async def test_process_working_hours_rejects_when_future_bookings_conflict(self):
+        message = make_message(text="10:00-18:00")
+        state = make_state()
+        conflicts = [{"date": "20.03.2026", "time": "19:00", "name": "Alice"}]
+
+        with patch.object(settings_handlers.database, "get_future_bookings_outside_working_hours", return_value=conflicts), \
+             patch.object(settings_handlers.keyboards, "get_cancel_admin_action_keyboard", return_value="kb"):
+            await settings_handlers.process_working_hours(message, state)
+
+        message.answer.assert_awaited_once_with(ANY, reply_markup="kb")
+        state.clear.assert_not_awaited()

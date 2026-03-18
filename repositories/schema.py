@@ -6,6 +6,60 @@ from config import salon_config
 from .base import aiosqlite, db_connect
 from time_utils import build_reminder_schedule, combine_salon_datetime, get_salon_now
 
+
+async def _table_columns(db, table_name: str) -> set[str]:
+    async with db.execute(f"PRAGMA table_info({table_name})") as cursor:
+        rows = await cursor.fetchall()
+    return {row[1] for row in rows}
+
+
+async def _cleanup_legacy_master_schema(db) -> None:
+    await db.execute("DROP INDEX IF EXISTS idx_bookings_date_master_time")
+    await db.execute("DROP TABLE IF EXISTS masters")
+
+    booking_columns = await _table_columns(db, "bookings")
+    if "master_id" not in booking_columns:
+        return
+
+    await db.execute("ALTER TABLE bookings RENAME TO bookings_legacy_master_cleanup")
+    await db.execute("""
+        CREATE TABLE bookings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER,
+            name TEXT,
+            phone TEXT,
+            date TEXT,
+            time TEXT,
+            reminder_level INTEGER DEFAULT 0,
+            duration INTEGER DEFAULT 60,
+            service_name TEXT,
+            price INTEGER DEFAULT 0,
+            date_iso TEXT,
+            created_at TEXT,
+            first_reminder_due_at TEXT,
+            second_reminder_due_at TEXT,
+            first_reminder_sent_at TEXT,
+            second_reminder_sent_at TEXT,
+            status TEXT DEFAULT 'scheduled',
+            completed_at TEXT,
+            cancelled_at TEXT
+        )
+    """)
+    await db.execute("""
+        INSERT INTO bookings (
+            id, user_id, name, phone, date, time, reminder_level, duration, service_name, price,
+            date_iso, created_at, first_reminder_due_at, second_reminder_due_at,
+            first_reminder_sent_at, second_reminder_sent_at, status, completed_at, cancelled_at
+        )
+        SELECT
+            id, user_id, name, phone, date, time, reminder_level, duration, service_name, price,
+            date_iso, created_at, first_reminder_due_at, second_reminder_due_at,
+            first_reminder_sent_at, second_reminder_sent_at, status, completed_at, cancelled_at
+        FROM bookings_legacy_master_cleanup
+    """)
+    await db.execute("DROP TABLE bookings_legacy_master_cleanup")
+
+
 async def init_db():
     async with db_connect() as db:
         # Создаем таблицу, если её нет
@@ -98,12 +152,6 @@ async def init_db():
         except aiosqlite.OperationalError:
             pass
         await db.execute("""
-            CREATE TABLE IF NOT EXISTS time_slots (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                time_value TEXT
-            )
-        """)
-        await db.execute("""
             CREATE TABLE IF NOT EXISTS blocked_slots (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 date TEXT NOT NULL,
@@ -113,6 +161,8 @@ async def init_db():
                 reason TEXT
             )
         """)
+        await _cleanup_legacy_master_schema(db)
+        await db.execute("DROP TABLE IF EXISTS time_slots")
         await db.execute("""
             UPDATE bookings
             SET date_iso = substr(date, 7, 4) || '-' || substr(date, 4, 2) || '-' || substr(date, 1, 2)

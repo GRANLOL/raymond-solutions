@@ -81,22 +81,6 @@ async def delete_service(service_id: int):
         await db.execute("DELETE FROM services WHERE id = ?", (service_id,))
         await db.commit()
 
-async def add_time_slot(time_value: str):
-    async with db_connect() as db:
-        await db.execute("INSERT INTO time_slots (time_value) VALUES (?)", (time_value,))
-        await db.commit()
-
-async def get_all_time_slots():
-    async with db_connect() as db:
-        async with db.execute("SELECT id, time_value FROM time_slots ORDER BY time_value") as cursor:
-            rows = await cursor.fetchall()
-            return [{"id": r[0], "time_value": r[1]} for r in rows]
-
-async def delete_time_slot(slot_id: int):
-    async with db_connect() as db:
-        await db.execute("DELETE FROM time_slots WHERE id = ?", (slot_id,))
-        await db.commit()
-
 async def update_service_duration(service_id: int, duration: int):
     async with db_connect() as db:
         await db.execute("UPDATE services SET duration=? WHERE id=?", (duration, service_id))

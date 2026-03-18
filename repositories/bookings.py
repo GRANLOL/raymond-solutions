@@ -17,6 +17,19 @@ def _duration_from_range(start_time: str, end_time: str) -> int:
     return end_minutes - start_minutes
 
 
+def _parse_working_hours(working_hours: str) -> tuple[int, int]:
+    start_str, end_str = ("10:00", "20:00")
+    if working_hours and "-" in working_hours:
+        raw_start, raw_end = [part.strip() for part in working_hours.split("-", 1)]
+        if ":" in raw_start and ":" in raw_end:
+            start_str, end_str = raw_start[-5:], raw_end[:5]
+    start_minutes = _time_to_minutes(start_str)
+    end_minutes = _time_to_minutes(end_str)
+    if start_minutes is None or end_minutes is None:
+        return 10 * 60, 20 * 60
+    return start_minutes, end_minutes
+
+
 def _booking_datetime(date: str, time: str):
     booking_date = datetime.strptime(date, "%d.%m.%Y").date()
     booking_time = datetime.strptime(time, "%H:%M").time()
@@ -184,6 +197,47 @@ async def get_all_bookings():
             """
         ) as cursor:
             return await cursor.fetchall()
+
+
+async def get_future_bookings_outside_working_hours(working_hours: str):
+    start_mins, end_mins = _parse_working_hours(working_hours)
+    now = get_salon_now()
+
+    async with db_connect() as db:
+        async with db.execute(
+            """
+            SELECT id, name, date, time, duration
+            FROM bookings
+            WHERE status = 'scheduled'
+            ORDER BY COALESCE(date_iso, date), time
+            """
+        ) as cursor:
+            rows = await cursor.fetchall()
+
+    conflicts = []
+    for booking_id, name, date_str, time_str, duration in rows:
+        try:
+            booking_dt = _booking_datetime(date_str, time_str)
+        except ValueError:
+            continue
+        duration_minutes = int(duration or 60)
+        if booking_dt.timestamp() + duration_minutes * 60 <= now.timestamp():
+            continue
+
+        slot_start = _time_to_minutes(time_str)
+        if slot_start is None:
+            continue
+        if slot_start < start_mins or slot_start + duration_minutes > end_mins:
+            conflicts.append(
+                {
+                    "id": booking_id,
+                    "name": name,
+                    "date": date_str,
+                    "time": time_str,
+                    "duration": duration_minutes,
+                }
+            )
+    return conflicts
 
 
 async def get_all_bookings_detailed():

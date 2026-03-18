@@ -1,5 +1,9 @@
 import unittest
+import aiosqlite
+import sqlite3
+import tempfile
 from datetime import date
+from pathlib import Path
 from unittest.mock import patch
 
 from repositories.analytics import get_bookings_by_weekday, get_revenue_stats
@@ -16,6 +20,7 @@ from repositories.categories import (
     get_all_categories,
     update_category_parent,
 )
+from repositories.schema import init_db
 from tests.support import RepositoryTestCase
 
 
@@ -201,3 +206,62 @@ class CategoryRepositoryTests(RepositoryTestCase):
 
         self.assertNotIn(2, by_id)
         self.assertEqual(by_id[3]["parent_id"], 1)
+
+
+class SchemaMigrationTests(unittest.IsolatedAsyncioTestCase):
+    async def test_init_db_removes_legacy_master_and_time_slot_tables(self):
+        db_path = Path.cwd() / f".test_{next(tempfile._get_candidate_names())}.db"
+        conn = sqlite3.connect(db_path)
+        try:
+            conn.executescript(
+                """
+                CREATE TABLE bookings (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    name TEXT,
+                    phone TEXT,
+                    date TEXT,
+                    time TEXT,
+                    master_id INTEGER
+                );
+                CREATE TABLE masters (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT
+                );
+                CREATE TABLE time_slots (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    time_value TEXT
+                );
+                CREATE INDEX idx_bookings_date_master_time ON bookings(date, master_id, time);
+                """
+            )
+            conn.commit()
+        finally:
+            conn.close()
+
+        original_connect = aiosqlite.connect
+
+        def connect_override(_path, *args, **kwargs):
+            return original_connect(db_path, *args, **kwargs)
+
+        with patch("repositories.schema.aiosqlite.connect", side_effect=connect_override):
+            await init_db()
+
+        conn = sqlite3.connect(db_path)
+        try:
+            objects = {
+                name: object_type
+                for name, object_type in conn.execute(
+                    "SELECT name, type FROM sqlite_master WHERE type IN ('table', 'index')"
+                )
+            }
+            booking_columns = [row[1] for row in conn.execute("PRAGMA table_info(bookings)")]
+        finally:
+            conn.close()
+            if db_path.exists():
+                db_path.unlink()
+
+        self.assertNotIn("masters", objects)
+        self.assertNotIn("time_slots", objects)
+        self.assertNotIn("idx_bookings_date_master_time", objects)
+        self.assertNotIn("master_id", booking_columns)

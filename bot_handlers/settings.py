@@ -452,6 +452,22 @@ async def process_working_hours(message: types.Message, state: FSMContext):
             reply_markup=keyboards.get_cancel_admin_action_keyboard("back_to_settings", "◀️ В настройки"),
         )
         return
+
+    conflicting_bookings = await database.get_future_bookings_outside_working_hours(wh)
+    if conflicting_bookings:
+        preview_lines = [
+            f"• {item['date']} {item['time']} — {item['name']}"
+            for item in conflicting_bookings[:5]
+        ]
+        suffix = "\n• ..." if len(conflicting_bookings) > 5 else ""
+        await message.answer(
+            "Нельзя сохранить новый график: есть активные записи вне этих часов.\n\n"
+            "Попросите клиента перенести запись самостоятельно или отмените её вручную, а затем попробуйте снова:\n"
+            f"{chr(10).join(preview_lines)}{suffix}",
+            reply_markup=keyboards.get_cancel_admin_action_keyboard("back_to_settings", "◀️ В настройки"),
+        )
+        return
+
     update_config("working_hours", wh)
     await state.clear()
     await message.answer(f"✅ Часы работы изменены на {wh}.", reply_markup=keyboards.get_system_settings_keyboard())
