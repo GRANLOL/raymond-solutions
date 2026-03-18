@@ -2,7 +2,7 @@
 // Вы можете изменить эти данные, чтобы быстро адаптировать WebApp под любой бизнес (Nogotki, Barbershop, СТО и т.д.)
 
 const LOCAL_API_BASE_URL = "http://127.0.0.1:8001/api";
-const REMOTE_API_BASE_URL = "https://miki-suffruticose-restrainedly.ngrok-free.dev/api";
+const REMOTE_API_BASE_URL = "https://api.tgbooking.online/api";
 const API_OVERRIDE_KEY = "apiBaseUrlOverride";
 
 function resolveApiBaseUrl() {
