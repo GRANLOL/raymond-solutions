@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 import logging
 from contextlib import asynccontextmanager
 
@@ -7,11 +8,12 @@ from aiogram.types import BotCommand
 from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
-from config import BOT_TOKEN, PORT, WEBAPP_AUTH_REQUIRED, WEBAPP_URL, salon_config
-from database import init_db, get_all_busy_slots, get_all_services, get_all_categories
-from bot_handlers import router
+
 from booking_service import create_booking_and_notify
 from booking_validation import validate_web_booking
+from bot_handlers import router
+from config import BOT_TOKEN, PORT, WEBAPP_AUTH_REQUIRED, WEBAPP_URL, salon_config
+from database import get_all_busy_slots, get_all_categories, get_all_services, init_db
 from logging_utils import configure_logging
 from rate_limit import get_rate_limit_remaining
 from reminders import start_scheduler
@@ -53,6 +55,7 @@ def require_webapp_auth(x_telegram_init_data: str | None) -> None:
         )
         raise HTTPException(status_code=401, detail="Unauthorized")
 
+
 @app.get("/api/health")
 async def healthcheck() -> dict:
     return {
@@ -61,11 +64,13 @@ async def healthcheck() -> dict:
         "bot_ready": app.state.bot is not None,
     }
 
+
 @app.get("/api/busy-slots")
 async def get_busy_slots(x_telegram_init_data: str | None = Header(default=None)) -> dict:
     require_webapp_auth(x_telegram_init_data)
     busy_slots = await get_all_busy_slots()
     return busy_slots if busy_slots else {}
+
 
 @app.get("/api/get-content")
 async def get_content(x_telegram_init_data: str | None = Header(default=None)) -> dict:
@@ -79,7 +84,7 @@ async def get_content(x_telegram_init_data: str | None = Header(default=None)) -
     schedule_interval = salon_config.get("schedule_interval", 30)
     timezone_offset = salon_config.get("timezone_offset", 3)
     currency_symbol = salon_config.get("currency_symbol", "₸")
-    
+
     return {
         "services": services,
         "categories": categories,
@@ -124,33 +129,34 @@ async def create_booking(payload: dict, x_telegram_init_data: str | None = Heade
         raise HTTPException(status_code=409, detail=message)
     return {"ok": True, "message": message}
 
+
 async def main():
-    # Initialize bot and dispatcher
     bot = Bot(token=BOT_TOKEN)
     app.state.bot = bot
     dp = Dispatcher()
-    
-    # Include the aggregated router package
     dp.include_router(router)
-    
-    # Set bot commands in the menu
+
     await bot.set_my_commands([
         BotCommand(command="start", description="Главное меню")
     ])
 
     config = uvicorn.Config(app, host="0.0.0.0", port=PORT)
     server = uvicorn.Server(config)
-    
+    scheduler_task = asyncio.create_task(start_scheduler(bot))
+
     logging.info("Starting bot polling and FastAPI server...")
-    
+
     try:
         await asyncio.gather(
             dp.start_polling(bot),
             server.serve(),
-            start_scheduler(bot),
         )
     finally:
+        scheduler_task.cancel()
+        with contextlib.suppress(asyncio.CancelledError):
+            await scheduler_task
         await bot.session.close()
+
 
 if __name__ == "__main__":
     asyncio.run(main())

@@ -24,9 +24,7 @@ logger = logging.getLogger(__name__)
 
 
 def format_reminder(template: str, name: str, date: str, time: str) -> str:
-    return template.replace("{name}", escape(name))\
-                   .replace("{date}", escape(date))\
-                   .replace("{time}", escape(time))
+    return template.replace("{name}", escape(name)).replace("{date}", escape(date)).replace("{time}", escape(time))
 
 
 def _get_reminder_grace_delta() -> timedelta:
@@ -108,9 +106,7 @@ async def send_admin_daily_digest(bot: Bot) -> None:
 
     lines = [f"📋 <b>Сводка на сегодня</b>", f"<b>Дата:</b> {today_str}", f"<b>Записей:</b> {len(bookings)}", ""]
     for index, (name, phone, _date, time, price) in enumerate(bookings[:5], start=1):
-        lines.append(
-            f"{index}. {escape(name)} — {escape(time)} — {escape(phone)} — {escape(str(price or 0))}"
-        )
+        lines.append(f"{index}. {escape(name)} — {escape(time)} — {escape(phone)} — {escape(str(price or 0))}")
     if len(bookings) > 5:
         lines.append("")
         lines.append(f"<i>И ещё {len(bookings) - 5} записей.</i>")
@@ -132,11 +128,15 @@ async def run_maintenance(bot: Bot) -> None:
 
 async def start_scheduler(bot: Bot):
     logger.info("Reminder scheduler started.")
-    while True:
-        try:
-            await check_reminders(bot)
-            await run_maintenance(bot)
-        except Exception as exc:
-            logger.error("Scheduler loop error: %s", exc)
+    try:
+        while True:
+            try:
+                await check_reminders(bot)
+                await run_maintenance(bot)
+            except Exception as exc:
+                logger.error("Scheduler loop error: %s", exc)
 
-        await asyncio.sleep(15 * 60)
+            await asyncio.sleep(15 * 60)
+    except asyncio.CancelledError:
+        logger.info("Reminder scheduler stopped.")
+        raise

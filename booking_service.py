@@ -47,7 +47,7 @@ async def create_booking_and_notify(
     if not booking_created:
         return False, "Этот слот уже занят.\n\nОбновите форму записи и выберите другое время."
 
-    msg_text = (
+    admin_text = (
         "🔔 <b>Новая запись</b>\n\n"
         f"<b>Клиент:</b> {escape(full_name_service)}\n"
         f"<b>Телефон:</b> {escape(phone)}\n"
@@ -57,11 +57,11 @@ async def create_booking_and_notify(
     admin_id = getenv("ADMIN_ID")
     if admin_id and bot is not None:
         try:
-            await bot.send_message(admin_id, msg_text, parse_mode="HTML")
+            await bot.send_message(admin_id, admin_text, parse_mode="HTML")
         except Exception:
             logger.exception("Failed to send booking notification to admin", extra={"admin_id": admin_id})
 
-    return True, (
+    success_text = (
         "✨ <b>Запись подтверждена</b>\n\n"
         f"<b>Услуга:</b> {escape(service)}\n"
         f"<b>Дата:</b> {escape(date)}\n"
@@ -69,6 +69,13 @@ async def create_booking_and_notify(
         f"<b>Телефон:</b> {escape(phone)}\n\n"
         "Ждём вас!"
     )
+    if bot is not None:
+        try:
+            await bot.send_message(user_id, success_text, parse_mode="HTML")
+        except Exception:
+            logger.exception("Failed to send booking confirmation to client", extra={"user_id": user_id})
+
+    return True, success_text
 
 
 async def finalize_web_booking(

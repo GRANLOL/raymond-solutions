@@ -303,7 +303,7 @@ class BookingServiceTests(unittest.IsolatedAsyncioTestCase):
         message.answer.assert_awaited_once_with(ANY)
         message.bot.send_message.assert_not_awaited()
 
-    async def test_finalize_web_booking_sends_admin_notification_on_success(self):
+    async def test_finalize_web_booking_sends_admin_and_client_notifications_on_success(self):
         remove_message = SimpleNamespace(delete=AsyncMock())
         message = make_message(user_id=5, full_name="Alice")
         message.answer = AsyncMock(side_effect=[remove_message, None])
@@ -325,7 +325,7 @@ class BookingServiceTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertEqual(message.answer.await_count, 2)
         remove_message.delete.assert_awaited_once()
-        message.bot.send_message.assert_awaited_once()
+        self.assertEqual(message.bot.send_message.await_count, 2)
 
 
 class CancelBookingHandlerTests(unittest.IsolatedAsyncioTestCase):
