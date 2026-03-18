@@ -190,9 +190,9 @@ async def get_all_bookings():
     async with db_connect() as db:
         async with db.execute(
             """
-            SELECT b.name, b.phone, b.date, b.time, b.price
+            SELECT b.name, b.phone, b.date, b.time, b.price, b.status
             FROM bookings b
-            WHERE b.status != 'cancelled'
+            WHERE b.status IN ('scheduled', 'completed')
             ORDER BY COALESCE(b.date_iso, b.date), b.time
             """
         ) as cursor:

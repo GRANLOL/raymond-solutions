@@ -87,7 +87,7 @@ def _style_data_rows(ws, start_row: int, end_row: int, center_columns: set[int] 
                 cell.alignment = Alignment(vertical="center", wrap_text=True)
 
 
-def _build_bookings_workbook(file_path: str, bookings: list[tuple[str, str, str, str, int | None]]) -> None:
+def _build_bookings_workbook(file_path: str, bookings: list[tuple[str, str, str, str, int | None, str]]) -> None:
     workbook = Workbook()
     summary_ws = workbook.active
     summary_ws.title = "Сводка"
@@ -96,18 +96,18 @@ def _build_bookings_workbook(file_path: str, bookings: list[tuple[str, str, str,
 
     salon_name = salon_config.get("salon_name", "Салон")
     generated_at = datetime.now().strftime("%d.%m.%Y %H:%M")
-    parsed_dates = [parsed for _, _, date, _, _ in bookings if (parsed := _safe_parse_date(date))]
+    parsed_dates = [parsed for _, _, date, _, _, _ in bookings if (parsed := _safe_parse_date(date))]
     min_date = min(parsed_dates).strftime("%d.%m.%Y") if parsed_dates else "-"
     max_date = max(parsed_dates).strftime("%d.%m.%Y") if parsed_dates else "-"
-    daily_counts = Counter(date for _, _, date, _, _ in bookings)
+    daily_counts = Counter(date for _, _, date, _, _, _ in bookings)
 
     summary_rows = [
         ("Отчет", f"Записи салона «{salon_name}»"),
         ("Сформирован", generated_at),
         ("Всего записей", len(bookings)),
         ("Период данных", f"{min_date} - {max_date}"),
-        ("Уникальных телефонов", len({phone for _, phone, _, _, _ in bookings if phone})),
-        ("Сумма по записям", format_money(sum(int(price or 0) for _, _, _, _, price in bookings))),
+        ("Уникальных телефонов", len({phone for _, phone, _, _, _, _ in bookings if phone})),
+        ("Сумма по записям", format_money(sum(int(price or 0) for _, _, _, _, price, _ in bookings))),
     ]
 
     summary_ws["A1"] = "Экспорт записей"
@@ -127,12 +127,12 @@ def _build_bookings_workbook(file_path: str, bookings: list[tuple[str, str, str,
 
     _fit_columns(summary_ws)
 
-    bookings_ws.append(["№", "Клиент / услуга", "Телефон", "Дата", "Время", "Цена"])
-    for idx, (name, phone, date, time, price) in enumerate(bookings, start=1):
-        bookings_ws.append([idx, name, phone, date, time, int(price or 0)])
+    bookings_ws.append(["№", "Клиент / услуга", "Телефон", "Дата", "Время", "Цена", "Статус"])
+    for idx, (name, phone, date, time, price, status) in enumerate(bookings, start=1):
+        bookings_ws.append([idx, name, phone, date, time, int(price or 0), _status_label(status)])
     _style_table_header(bookings_ws[1])
     if bookings_ws.max_row > 1:
-        _style_data_rows(bookings_ws, 2, bookings_ws.max_row, center_columns={1, 4, 5, 6})
+        _style_data_rows(bookings_ws, 2, bookings_ws.max_row, center_columns={1, 4, 5, 6, 7})
     bookings_ws.freeze_panes = "A2"
     bookings_ws.auto_filter.ref = bookings_ws.dimensions
     for cell in bookings_ws["F"][1:]:

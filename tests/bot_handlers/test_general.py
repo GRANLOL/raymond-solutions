@@ -43,13 +43,13 @@ class GeneralHandlerTests(unittest.IsolatedAsyncioTestCase):
         message = make_message(user_id=1)
 
         with patch.object(general_handlers, "getenv", return_value="1"), \
-             patch.object(general_handlers.database, "get_all_bookings", return_value=[("A", "B", "01.01.2026", "10:00", 2500)]), \
+             patch.object(general_handlers.database, "get_all_bookings", return_value=[("A", "B", "01.01.2026", "10:00", 2500, "scheduled")]), \
              patch.object(general_handlers, "_build_bookings_workbook") as build_mock, \
              patch.object(general_handlers, "FSInputFile", return_value="excel-file"), \
              patch.object(general_handlers.os, "remove") as remove_mock:
             await general_handlers.export_excel_handler(message)
 
-        build_mock.assert_called_once_with("bookings_export.xlsx", [("A", "B", "01.01.2026", "10:00", 2500)])
+        build_mock.assert_called_once_with("bookings_export.xlsx", [("A", "B", "01.01.2026", "10:00", 2500, "scheduled")])
         message.answer_document.assert_awaited_once_with("excel-file", caption=ANY, parse_mode="HTML")
         remove_mock.assert_called_once_with("bookings_export.xlsx")
 
