@@ -47,7 +47,7 @@ export const config = {
     salonName: "Nail Studio Deluxe",
     salonLogoUrl: "",
     salonLogoText: "NS",
-    salonTagline: "premium nail care",
+    salonTagline: "online booking",
 
     apiBaseUrl: resolveApiBaseUrl(),
 
