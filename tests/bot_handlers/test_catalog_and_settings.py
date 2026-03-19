@@ -216,6 +216,19 @@ class SettingsHandlerTests(unittest.IsolatedAsyncioTestCase):
         message.answer.assert_awaited_once_with(ANY, reply_markup="kb")
         state.clear.assert_not_awaited()
 
+    async def test_settings_booking_window_callback_starts_booking_window_flow(self):
+        callback = make_callback(data="settings_booking_window", user_id=1)
+        state = make_state()
+
+        with patch.object(settings_handlers, "getenv", return_value="1"), \
+             patch.object(settings_handlers.keyboards, "get_cancel_admin_action_keyboard", return_value="kb"), \
+             patch.dict(settings_handlers.salon_config, {"booking_window": 14}, clear=False):
+            await settings_handlers.settings_booking_window_callback(callback, state)
+
+        state.set_state.assert_awaited_once()
+        callback.message.edit_text.assert_awaited_once_with(ANY, parse_mode="HTML", reply_markup="kb")
+        callback.answer.assert_awaited_once()
+
     async def test_toggle_service_duration_visibility_updates_config_and_rerenders_menu(self):
         callback = make_callback(data="toggle_service_duration_visibility", user_id=1)
 

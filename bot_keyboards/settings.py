@@ -54,6 +54,7 @@ def get_system_settings_keyboard():
     builder.row(InlineKeyboardButton(text="🔔 Настройки напоминаний", callback_data="settings_reminders"))
     builder.row(InlineKeyboardButton(text="🤖 Тексты бота", callback_data="settings_bot_texts"))
     builder.row(InlineKeyboardButton(text="🕒 Часовой пояс (UTC)", callback_data="settings_timezone"))
+    builder.row(InlineKeyboardButton(text="🗓 Окно брони", callback_data="settings_booking_window"))
     builder.row(InlineKeyboardButton(text="🕔 Часы работы", callback_data="settings_working_hours"))
     builder.row(InlineKeyboardButton(text="🧭 Шаг записи", callback_data="settings_interval"))
     builder.row(
@@ -68,7 +69,7 @@ def get_system_settings_keyboard():
             callback_data="toggle_service_duration_visibility",
         )
     )
-    builder.row(InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_admin_action"))
+    builder.row(InlineKeyboardButton(text="⬅️ Назад в меню", callback_data="back_to_admin_menu"))
     return builder.as_markup()
 
 

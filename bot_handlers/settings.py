@@ -345,6 +345,20 @@ async def settings_timezone_callback(callback: types.CallbackQuery, state: FSMCo
     )
 
 
+@router.callback_query(F.data == "settings_booking_window")
+async def settings_booking_window_callback(callback: types.CallbackQuery, state: FSMContext):
+    if not _is_admin(callback.from_user.id):
+        return
+    await callback.answer()
+    current_window = salon_config.get("booking_window", 7)
+    await state.set_state(AddBookingWindowForm.days)
+    await callback.message.edit_text(
+        f"🗓 <b>Окно брони</b>\n\nТекущее значение: <b>{current_window}</b> дней.\nВведите новое значение:",
+        parse_mode="HTML",
+        reply_markup=keyboards.get_cancel_admin_action_keyboard("back_to_settings", "◀️ В настройки"),
+    )
+
+
 @router.message(EditTimezoneForm.offset)
 async def process_timezone_offset(message: types.Message, state: FSMContext):
     try:
@@ -814,9 +828,9 @@ async def edit_booking_window_handler(message: types.Message, state: FSMContext)
     current_window = salon_config.get("booking_window", 7)
     await state.set_state(AddBookingWindowForm.days)
     await message.answer(
-        f"📆 Текущее окно бронирования: <b>{current_window}</b> дней.\nВведите новое значение:",
+        f"🗓 <b>Окно брони</b>\n\nТекущее значение: <b>{current_window}</b> дней.\nВведите новое значение:",
         parse_mode="HTML",
-        reply_markup=keyboards.get_cancel_admin_action_keyboard(),
+        reply_markup=keyboards.get_cancel_admin_action_keyboard("back_to_settings", "◀️ В настройки"),
     )
 
 

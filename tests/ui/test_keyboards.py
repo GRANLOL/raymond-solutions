@@ -3,6 +3,7 @@ import unittest
 import bot_keyboards.common as common_keyboards
 import bot_keyboards.catalog as catalog_keyboards
 import bot_keyboards.menus as menu_keyboards
+import bot_keyboards.settings as settings_keyboards
 
 
 class KeyboardTests(unittest.TestCase):
@@ -77,3 +78,15 @@ class KeyboardTests(unittest.TestCase):
         callback_data = [button.callback_data for row in markup.inline_keyboard for button in row if button.callback_data]
 
         self.assertIn("admin_booking_status_10_no_show_today_0", callback_data)
+
+    def test_admin_menu_no_longer_contains_booking_window_button(self):
+        labels = [button.text for row in menu_keyboards.admin_menu.keyboard for button in row]
+
+        self.assertNotIn("🗓 Окно брони", labels)
+
+    def test_system_settings_keyboard_includes_booking_window_and_back_to_menu(self):
+        markup = settings_keyboards.get_system_settings_keyboard()
+        callback_data = [button.callback_data for row in markup.inline_keyboard for button in row if button.callback_data]
+
+        self.assertIn("settings_booking_window", callback_data)
+        self.assertIn("back_to_admin_menu", callback_data)
