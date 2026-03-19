@@ -4,6 +4,7 @@ from money import format_money
 
 async def build_stats_report(period_days: int, period_label: str) -> str:
     revenue = await database.get_revenue_stats(period_days)
+    status_stats = await database.get_booking_status_stats(period_days)
     top_services = await database.get_top_services(period_days, limit=5)
     weekday_stats = await database.get_bookings_by_weekday(period_days)
     peak_hours = await database.get_peak_hours(period_days, top_n=3)
@@ -15,14 +16,22 @@ async def build_stats_report(period_days: int, period_label: str) -> str:
     total = revenue["total_revenue"]
     count = revenue["total_bookings"]
     avg = revenue["avg_price"]
-    lines.append(f"  Записей: {count} | Сумма: {format_money(total)} | Средний чек: {format_money(avg)}\n")
+    lines.append(f"  Выполнено: {count} | Сумма: {format_money(total)} | Средний чек: {format_money(avg)}\n")
+
+    lines.append("🧾 <b>Статусы записей:</b>")
+    lines.append(
+        "  "
+        f"Выполнено: {status_stats['completed']} | "
+        f"Отменено: {status_stats['cancelled']} | "
+        f"Не пришли: {status_stats['no_show']}\n"
+    )
 
     if top_services:
         lines.append("🏆 <b>Топ услуг:</b>")
         medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"]
         for i, (name, cnt) in enumerate(top_services):
             medal = medals[i] if i < len(medals) else f"{i + 1}."
-            lines.append(f"  {medal} {name} — {cnt} записей")
+            lines.append(f"  {medal} {name} - {cnt} записей")
         lines.append("")
     else:
         lines.append("🏆 <b>Топ услуг:</b> нет данных\n")

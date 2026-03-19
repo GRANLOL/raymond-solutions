@@ -1,18 +1,28 @@
-import unittest
-import aiosqlite
 import sqlite3
 import tempfile
+import unittest
 from datetime import date
 from pathlib import Path
 from unittest.mock import patch
 
-from repositories.analytics import get_bookings_by_weekday, get_revenue_stats
+import aiosqlite
+
+from repositories.analytics import (
+    get_booking_status_stats,
+    get_bookings_by_weekday,
+    get_client_stats,
+    get_peak_hours,
+    get_revenue_stats,
+    get_top_services,
+)
 from repositories.bookings import (
     ActiveBookingLimitReachedError,
+    cancel_booking_by_id,
     create_booking_if_available,
     get_all_bookings,
     reschedule_booking_if_available,
     search_bookings,
+    update_booking_status,
 )
 from repositories.categories import (
     add_category,
@@ -33,7 +43,7 @@ class BookingRepositoryTests(RepositoryTestCase):
             date="14.03.2026",
             time="10:00",
             duration=60,
-            service_name="Маникюр",
+            service_name="Service A",
             price=2000,
         )
         overlapping = await create_booking_if_available(
@@ -43,7 +53,7 @@ class BookingRepositoryTests(RepositoryTestCase):
             date="14.03.2026",
             time="10:30",
             duration=60,
-            service_name="Маникюр",
+            service_name="Service A",
             price=2000,
         )
         later_slot = await create_booking_if_available(
@@ -53,7 +63,7 @@ class BookingRepositoryTests(RepositoryTestCase):
             date="14.03.2026",
             time="11:00",
             duration=60,
-            service_name="Маникюр",
+            service_name="Service A",
             price=2000,
         )
 
@@ -85,7 +95,7 @@ class BookingRepositoryTests(RepositoryTestCase):
         self.assertTrue(first)
         self.assertTrue(second)
 
-    async def test_revenue_stats_counts_bookings_in_period(self):
+    async def test_revenue_stats_counts_only_completed_bookings_in_period(self):
         await create_booking_if_available(
             user_id=1,
             name="Alice",
@@ -93,14 +103,204 @@ class BookingRepositoryTests(RepositoryTestCase):
             date="15.03.2026",
             time="10:00",
             duration=60,
-            service_name="Маникюр",
+            service_name="Service A",
             price=2000,
         )
+        await update_booking_status(1, "completed")
+
+        await create_booking_if_available(
+            user_id=2,
+            name="Bob",
+            phone="+10000000002",
+            date="16.03.2026",
+            time="10:00",
+            duration=60,
+            service_name="Service B",
+            price=3000,
+        )
+        await update_booking_status(2, "no_show")
+
+        await create_booking_if_available(
+            user_id=3,
+            name="Carol",
+            phone="+10000000003",
+            date="17.03.2026",
+            time="10:00",
+            duration=60,
+            service_name="Service C",
+            price=4000,
+        )
+        await cancel_booking_by_id(3)
 
         stats = await get_revenue_stats(30)
 
         self.assertEqual(stats["total_bookings"], 1)
         self.assertEqual(stats["total_revenue"], 2000)
+        self.assertEqual(stats["avg_price"], 2000)
+
+    async def test_booking_status_stats_counts_completed_cancelled_and_no_show(self):
+        await create_booking_if_available(
+            user_id=1,
+            name="Alice",
+            phone="+10000000001",
+            date="15.03.2026",
+            time="10:00",
+            duration=60,
+            service_name="Service A",
+            price=2000,
+        )
+        await update_booking_status(1, "completed")
+
+        await create_booking_if_available(
+            user_id=2,
+            name="Bob",
+            phone="+10000000002",
+            date="16.03.2026",
+            time="11:00",
+            duration=60,
+            service_name="Service B",
+            price=2500,
+        )
+        await update_booking_status(2, "no_show")
+
+        await create_booking_if_available(
+            user_id=3,
+            name="Carol",
+            phone="+10000000003",
+            date="17.03.2026",
+            time="12:00",
+            duration=60,
+            service_name="Service C",
+            price=3000,
+        )
+        await cancel_booking_by_id(3)
+
+        await create_booking_if_available(
+            user_id=4,
+            name="Dana",
+            phone="+10000000004",
+            date="18.03.2026",
+            time="13:00",
+            duration=60,
+            service_name="Service D",
+            price=3500,
+        )
+
+        stats = await get_booking_status_stats(30)
+
+        self.assertEqual(stats, {"completed": 1, "cancelled": 1, "no_show": 1})
+
+    async def test_top_services_and_peak_hours_use_only_completed_bookings(self):
+        await create_booking_if_available(
+            user_id=1,
+            name="Alice",
+            phone="+10000000001",
+            date="15.03.2026",
+            time="10:00",
+            duration=60,
+            service_name="Completed Service",
+            price=2000,
+        )
+        await update_booking_status(1, "completed")
+
+        await create_booking_if_available(
+            user_id=2,
+            name="Bob",
+            phone="+10000000002",
+            date="16.03.2026",
+            time="10:00",
+            duration=60,
+            service_name="Completed Service",
+            price=2100,
+        )
+        await update_booking_status(2, "completed")
+
+        await create_booking_if_available(
+            user_id=3,
+            name="Carol",
+            phone="+10000000003",
+            date="17.03.2026",
+            time="12:00",
+            duration=60,
+            service_name="No Show Service",
+            price=2200,
+        )
+        await update_booking_status(3, "no_show")
+
+        await create_booking_if_available(
+            user_id=4,
+            name="Dana",
+            phone="+10000000004",
+            date="18.03.2026",
+            time="13:00",
+            duration=60,
+            service_name="Cancelled Service",
+            price=2300,
+        )
+        await cancel_booking_by_id(4)
+
+        top_services = await get_top_services(30)
+        peak_hours = await get_peak_hours(30)
+
+        self.assertEqual(top_services, [("Completed Service", 2)])
+        self.assertEqual(peak_hours, [("10:00", 2)])
+
+    async def test_weekday_and_client_stats_use_only_completed_bookings(self):
+        await create_booking_if_available(
+            user_id=1,
+            name="Alice",
+            phone="+10000000001",
+            date="10.03.2026",
+            time="10:00",
+            duration=60,
+            service_name="Old Service",
+            price=1500,
+        )
+        await update_booking_status(1, "completed")
+
+        await create_booking_if_available(
+            user_id=1,
+            name="Alice",
+            phone="+10000000001",
+            date="15.03.2026",
+            time="10:00",
+            duration=60,
+            service_name="Return Service",
+            price=2000,
+        )
+        await update_booking_status(2, "completed")
+
+        await create_booking_if_available(
+            user_id=2,
+            name="Bob",
+            phone="+10000000002",
+            date="15.03.2026",
+            time="11:00",
+            duration=60,
+            service_name="No Show Service",
+            price=2100,
+        )
+        await update_booking_status(3, "no_show")
+
+        await create_booking_if_available(
+            user_id=3,
+            name="Cara",
+            phone="+10000000003",
+            date="15.03.2026",
+            time="12:00",
+            duration=60,
+            service_name="Cancelled Service",
+            price=2200,
+        )
+        await cancel_booking_by_id(4)
+
+        with patch("repositories.analytics._period_start_date", return_value=date(2026, 3, 15)):
+            weekday_stats = await get_bookings_by_weekday(0)
+            client_stats = await get_client_stats(0)
+
+        self.assertEqual(sum(weekday_stats.values()), 1)
+        self.assertEqual(weekday_stats["Вс"], 1)
+        self.assertEqual(client_stats, {"new": 0, "returning": 1})
 
     async def test_today_stats_do_not_include_future_bookings(self):
         await create_booking_if_available(
@@ -110,9 +310,11 @@ class BookingRepositoryTests(RepositoryTestCase):
             date="15.03.2026",
             time="10:00",
             duration=60,
-            service_name="Маникюр",
+            service_name="Service A",
             price=2000,
         )
+        await update_booking_status(1, "completed")
+
         await create_booking_if_available(
             user_id=2,
             name="Monday Client",
@@ -120,15 +322,16 @@ class BookingRepositoryTests(RepositoryTestCase):
             date="16.03.2026",
             time="11:00",
             duration=60,
-            service_name="Маникюр",
+            service_name="Service B",
             price=2500,
         )
+        await update_booking_status(2, "completed")
 
         with patch("repositories.analytics._period_start_date", return_value=date(2026, 3, 15)):
             weekday_stats = await get_bookings_by_weekday(0)
 
-        self.assertEqual(weekday_stats["Пн"], 0)
-        self.assertEqual(weekday_stats["Вс"], 1)
+        self.assertEqual(sum(weekday_stats.values()), 1)
+        self.assertEqual(max(weekday_stats.values()), 1)
 
     async def test_reschedule_booking_moves_slot_when_new_time_is_free(self):
         await create_booking_if_available(
