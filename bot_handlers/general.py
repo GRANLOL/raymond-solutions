@@ -161,6 +161,12 @@ def _paginate(items, page: int, page_size: int = BOOKINGS_PAGE_SIZE):
     return items[start:end], page, total_pages
 
 
+def _get_last_page(items, page_size: int = BOOKINGS_PAGE_SIZE) -> int:
+    total = len(items)
+    total_pages = max((total - 1) // page_size + 1, 1)
+    return total_pages - 1
+
+
 def _render_booking_page(bookings, title: str, page: int):
     page_items, page, total_pages = _paginate(bookings, page)
     lines = [f"🗓 <b>{title}</b>", f"<i>Страница {page + 1} из {total_pages}</i>", ""]
@@ -326,7 +332,8 @@ async def view_all_handler(message: types.Message):
     admin_id = getenv("ADMIN_ID")
     if not admin_id or str(message.from_user.id) != admin_id:
         return
-    await _show_booking_list(message, context="all", page=0)
+    bookings = await database.get_all_bookings_detailed()
+    await _show_booking_list(message, context="all", page=_get_last_page(bookings))
 
 
 @router.message(F.text == "🗓 На сегодня")
