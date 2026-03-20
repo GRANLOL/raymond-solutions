@@ -108,6 +108,12 @@ body.app-ready .container {
         transform 0.44s cubic-bezier(0.22, 1, 0.36, 1) 0.08s;
 }
 
+/* Fix dropdown blurring itself by stripping stacking context on container */
+body.dropdown-open .container {
+    transform: none !important;
+    transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
     body.app-booting .salon-header,
     body.app-booting .container,
