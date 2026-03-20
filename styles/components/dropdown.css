@@ -92,9 +92,7 @@ body.dropdown-open::before {
     left: -1px;
     right: -1px;
     width: calc(100% + 2px);
-    background: rgba(20, 20, 20, 0.92);
-    backdrop-filter: blur(5px);
-    -webkit-backdrop-filter: blur(5px);
+    background: rgba(20, 20, 20, 0.68);
     border: 1px solid rgba(226, 197, 98, 0.35);
     border-top: none;
     border-bottom-left-radius: var(--border-radius);
@@ -116,12 +114,31 @@ body.dropdown-open::before {
     transition: opacity 0.25s var(--bezier-smooth),
         transform 0.25s var(--bezier-smooth),
         visibility 0.25s var(--bezier-smooth);
+    isolation: isolate;
+}
+
+.custom-options::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-bottom-left-radius: inherit;
+    border-bottom-right-radius: inherit;
+    background: rgba(20, 20, 20, 0.82);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    z-index: 0;
+    pointer-events: none;
 }
 
 .custom-options.open {
     opacity: 1;
     visibility: visible;
     transform: scaleY(1) translateZ(0);
+}
+
+.custom-options > * {
+    position: relative;
+    z-index: 1;
 }
 
 .search-container {
