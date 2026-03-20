@@ -76,13 +76,11 @@ function applyHeaderBranding() {
 function revealInitialView() {
     const bootStartedAt = Number(document.body.dataset.bootStartedAt || Date.now());
     const elapsed = Date.now() - bootStartedAt;
-    const minVisibleBootMs = 120;
+    const minVisibleBootMs = 90;
     const reveal = () => {
         window.requestAnimationFrame(() => {
-            window.requestAnimationFrame(() => {
-                document.body.classList.remove('app-booting');
-                document.body.classList.add('app-ready');
-            });
+            document.body.classList.remove('app-booting');
+            document.body.classList.add('app-ready');
         });
     };
 
