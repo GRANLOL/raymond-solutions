@@ -146,21 +146,54 @@ function renderDateEmptyState(dateContainer) {
 
     const emptyState = document.createElement('div');
     emptyState.className = 'date-container-empty';
-    emptyState.textContent = 'Выберите услугу, чтобы посмотреть доступные даты.';
+    emptyState.innerHTML = '<span style="font-size: 18px; margin-right: 8px;">✨</span>Выберите услугу, чтобы увидеть расписание';
     dateContainer.appendChild(emptyState);
 }
 
-export function generateDates() {
-    const dateContainer = document.getElementById('date-container');
-    dateContainer.innerHTML = '';
-    dateContainer.classList.remove('date-container--empty');
+function renderDateSkeletons(container, count = 7) {
+    container.innerHTML = '';
+    container.classList.remove('date-container--empty');
+    for (let i = 0; i < count; i++) {
+        const skeleton = document.createElement('div');
+        skeleton.className = 'skeleton skeleton-date';
+        skeleton.style.animationDelay = `${i * 30}ms`;
+        container.appendChild(skeleton);
+    }
+}
 
+function renderTimeSkeletons(container, count = 6) {
+    container.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+        const skeleton = document.createElement('div');
+        skeleton.className = 'skeleton skeleton-time';
+        // Diagonal grid stagger
+        skeleton.style.animationDelay = `${(Math.floor(i / 3) + (i % 3)) * 30}ms`;
+        container.appendChild(skeleton);
+    }
+}
+
+// Use a counter to prevent overlapping asynchronous renders
+let dateGenerationToken = 0;
+
+export async function generateDates() {
+    const currentToken = ++dateGenerationToken;
+    const dateContainer = document.getElementById('date-container');
+    
     if (!store.selectedService) {
+        dateContainer.innerHTML = '';
         renderDateEmptyState(dateContainer);
         return;
     }
 
-    // Calculate current time in salon's timezone
+    renderDateSkeletons(dateContainer, 7);
+    
+    // Artificial premium delay for glassmorphism skeletons
+    await new Promise(r => setTimeout(r, 400));
+    
+    if (currentToken !== dateGenerationToken) return; // Abort if selection changed
+
+    dateContainer.innerHTML = '';
+    dateContainer.classList.remove('date-container--empty');
     const nowLocal = new Date();
     const utcMs = nowLocal.getTime() + (nowLocal.getTimezoneOffset() * 60000);
     const salonNowMs = utcMs + (store.timezoneOffset * 3600000);
@@ -185,6 +218,7 @@ export function generateDates() {
 
         const card = document.createElement('div');
         card.className = 'date-card fade-in';
+        card.style.animationDelay = `${i * 35}ms`;
 
         if (isOffDay || !hasSlots) {
             card.classList.add(isOffDay ? 'date-off' : 'date-full');
@@ -209,17 +243,28 @@ export function generateDates() {
     }
 }
 
-export function generateTimes(formattedDate = null) {
-    const timeGrid = document.getElementById('time-grid');
-    timeGrid.innerHTML = '';
+let timeGenerationToken = 0;
 
+export async function generateTimes(formattedDate = null) {
+    const currentToken = ++timeGenerationToken;
+    const timeGrid = document.getElementById('time-grid');
+    
     if (!formattedDate) {
+        timeGrid.innerHTML = '';
         const emptyState = document.createElement('div');
         emptyState.className = 'time-grid-empty';
-        emptyState.textContent = 'Сначала выберите дату, чтобы увидеть доступное время.';
+        emptyState.innerHTML = '<span style="font-size: 16px; margin-right: 8px;">🕒</span>Сначала выберите дату, чтобы увидеть время';
         timeGrid.appendChild(emptyState);
         return;
     }
+
+    renderTimeSkeletons(timeGrid, 9);
+
+    await new Promise(r => setTimeout(r, 350));
+    
+    if (currentToken !== timeGenerationToken) return;
+
+    timeGrid.innerHTML = '';
 
     // Use regex to strictly extract HH:MM pairs, ignoring other text like day labels
     const timeMatch = store.workingHours.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);
@@ -268,6 +313,9 @@ export function generateTimes(formattedDate = null) {
 
         const slot = document.createElement('div');
         slot.className = 'time-slot fade-in';
+        // Elegant staggered delay (diagonal flow)
+        slot.style.animationDelay = `${(renderedSlots % 3 + Math.floor(renderedSlots / 3)) * 35}ms`;
+        
         const availability = getSlotAvailability(formattedDate, timeStr);
         const content = document.createElement('div');
         content.className = 'time-slot-content';
@@ -299,7 +347,7 @@ export function generateTimes(formattedDate = null) {
     if (renderedSlots === 0) {
         const emptyState = document.createElement('div');
         emptyState.className = 'time-grid-empty';
-        emptyState.textContent = 'На эту дату сейчас нет подходящих слотов. Выберите другую дату.';
+        emptyState.innerHTML = '<span style="font-size: 16px; margin-right: 8px;">😔</span>На эту дату сейчас нет слотов';
         timeGrid.appendChild(emptyState);
     }
 }

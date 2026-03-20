@@ -17,9 +17,9 @@ body.dropdown-open::before {
     content: "";
     position: fixed;
     inset: 0;
-    background: rgba(8, 8, 8, 0.18);
-    backdrop-filter: blur(1.5px);
-    -webkit-backdrop-filter: blur(1.5px);
+    background: rgba(8, 8, 8, 0.28); /* slightly darker */
+    backdrop-filter: blur(6px); /* increased blur */
+    -webkit-backdrop-filter: blur(6px);
     pointer-events: none;
     z-index: 8;
 }
