@@ -116,7 +116,7 @@ def format_price_list_page(services, page: int, page_size: int = 20):
         categories[cat_name].append(service)
 
     lines = [
-        f"💸 <b>Прайс-лист</b>",
+        f"💎 <b>Услуги и цены</b>",
         f"<i>{salon_config.get('salon_name', 'Nail Studio')}</i>",
         "━━━━━━━━━━━━━━━━━━",
         "",
@@ -172,11 +172,11 @@ def _get_portfolio_items(limit: int = PORTFOLIO_PREVIEW_LIMIT) -> list[dict[str,
     return items
 
 
-@router.message(F.text == "💸 Прайс-лист")
+@router.message(F.text.in_({"💸 Прайс-лист", "💎 Услуги и цены"}))
 async def handle_price(message: types.Message):
     services = await database.get_all_services()
     if not services:
-        await message.answer("💸 <b>Прайс-лист пока пуст</b>\n\nДобавьте услуги в админ-панели.", parse_mode="HTML")
+        await message.answer("💎 <b>Услуги и цены пока не добавлены</b>\n\nСначала добавьте их в админ-панели.", parse_mode="HTML")
         return
 
     text, total_pages = format_price_list_page(services, page=0, page_size=25)
@@ -194,7 +194,7 @@ async def price_page_cb(callback: types.CallbackQuery):
 
     services = await database.get_all_services()
     if not services:
-        await callback.answer("Прайс-лист пуст", show_alert=True)
+        await callback.answer("Услуги не найдены", show_alert=True)
         return
 
     await callback.answer()
@@ -207,7 +207,7 @@ async def price_page_cb(callback: types.CallbackQuery):
 
 
 def is_address_btn(message: types.Message) -> bool:
-    return message.text == salon_config.get("custom_btn_address_lbl", "📌 Адрес")
+    return message.text in (salon_config.get("custom_btn_address_lbl", "📍 Адрес и контакты"), "📌 Адрес")
 
 @router.message(is_address_btn)
 async def handle_address(message: types.Message):
@@ -230,12 +230,12 @@ async def handle_address(message: types.Message):
 
 
 def is_portfolio_btn(message: types.Message) -> bool:
-    return message.text == salon_config.get("custom_btn_portfolio_lbl", "🖼 Примеры работ")
+    return message.text in (salon_config.get("custom_btn_portfolio_lbl", "💅 Примеры работ"), "🖼 Примеры работ")
 
 @router.message(is_portfolio_btn)
 async def handle_portfolio(message: types.Message):
     btn_type = salon_config.get("custom_btn_portfolio_type", "portfolio")
-    lbl = salon_config.get("custom_btn_portfolio_lbl", "🖼 Примеры работ")
+    lbl = salon_config.get("custom_btn_portfolio_lbl", "💅 Примеры работ")
     
     if btn_type == "text":
         custom_txt = salon_config.get("custom_btn_portfolio_txt") or "Текст не настроен."
@@ -304,7 +304,7 @@ async def handle_portfolio(message: types.Message):
     )
 
 
-@router.message(F.text.in_({"📅 Записаться", "📲 Записаться"}))
+@router.message(F.text.in_({"📅 Записаться", "📲 Записаться", "📅 Онлайн-запись"}))
 async def launch_booking_webapp(message: types.Message):
     await message.answer(
         "📅 <b>Онлайн-запись</b>\n\nВыберите удобное время и оформите запись онлайн.",
@@ -342,7 +342,7 @@ async def process_web_app_data(message: types.Message, state: FSMContext):
         await message.answer("⚠️ Произошла ошибка при обработке данных. Попробуйте еще раз.")
 
 
-@router.message(F.text == "📋 Мои записи")
+@router.message(F.text.in_({"📋 Мои записи", "🗓 Мои визиты"}))
 async def my_bookings_handler(message: types.Message):
     await database.sync_completed_bookings()
     bookings = await database.get_user_bookings(message.from_user.id)
@@ -354,7 +354,7 @@ async def my_bookings_handler(message: types.Message):
             (
                 "📋 <b>Активных записей сейчас нет</b>\n\n"
                 f"🕘 Записей в истории: <b>{history_count}</b>\n"
-                "Если захотите, откройте кнопку «История» или запишитесь на новый визит."
+                "Если захотите, откройте вкладку «История записей» или оформите новый визит."
             ),
             parse_mode="HTML",
         )
@@ -367,7 +367,7 @@ async def my_bookings_handler(message: types.Message):
             parse_mode="HTML",
         )
 
-@router.message(F.text == "🕘 История")
+@router.message(F.text.in_({"🕘 История", "🕰 История записей"}))
 async def booking_history_handler(message: types.Message):
     await database.sync_completed_bookings()
     bookings = await database.get_user_bookings(message.from_user.id)
@@ -375,7 +375,7 @@ async def booking_history_handler(message: types.Message):
 
     if not history_bookings:
         await message.answer(
-            "🕘 <b>История пока пуста</b>\n\nЗавершённые и отменённые записи появятся здесь после первых визитов.",
+            "🕰 <b>История пока пуста</b>\n\nЗдесь будут храниться все ваши завершённые и отменённые визиты.",
             parse_mode="HTML",
         )
         return

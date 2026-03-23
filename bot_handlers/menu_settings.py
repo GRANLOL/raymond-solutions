@@ -25,7 +25,7 @@ async def edit_menu_btn_address_cb(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         return
     await callback.answer()
-    lbl = salon_config.get("custom_btn_address_lbl", "📌 Адрес")
+    lbl = salon_config.get("custom_btn_address_lbl", "📍 Адрес и контакты")
     await callback.message.edit_text(
         f"Управление кнопкой: <b>{lbl}</b>",
         parse_mode="HTML",
@@ -38,7 +38,7 @@ async def edit_menu_btn_portfolio_cb(callback: types.CallbackQuery):
     if not _is_admin(callback.from_user.id):
         return
     await callback.answer()
-    lbl = salon_config.get("custom_btn_portfolio_lbl", "🖼 Примеры работ")
+    lbl = salon_config.get("custom_btn_portfolio_lbl", "💅 Примеры работ")
     current_type = salon_config.get("custom_btn_portfolio_type", "portfolio")
     text = (
         f"Управление кнопкой: <b>{lbl}</b>\n\n"
@@ -154,7 +154,7 @@ async def toggle_btn_type_cb(callback: types.CallbackQuery):
     update_config("custom_btn_portfolio_type", new_type)
     await callback.answer("Тип кнопки изменен")
     
-    lbl = salon_config.get("custom_btn_portfolio_lbl", "🖼 Примеры работ")
+    lbl = salon_config.get("custom_btn_portfolio_lbl", "💅 Примеры работ")
     text = (
         f"Управление кнопкой: <b>{lbl}</b>\n\n"
         f"Текущий режим работы: <b>{'Галерея (фото)' if new_type == 'portfolio' else 'Текст (ссылки/контакты)'}</b>"
