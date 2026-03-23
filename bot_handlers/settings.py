@@ -163,18 +163,21 @@ async def settings_reminders_callback(callback: types.CallbackQuery):
         return
     await callback.answer()
     
+    default_rem1 = "Здравствуйте, {name}! Напоминаем о вашей записи завтра ({date}) в {time}."
+    default_rem2 = "Здравствуйте, {name}! Напоминаем, ваша запись состоится сегодня ({date}) в {time}."
+    
     rem1 = salon_config.get("reminder_1_text", "")
     rem2 = salon_config.get("reminder_2_text", "")
-    rem1_display = f"<blockquote>{rem1}</blockquote>" if rem1 else "<i>Не задано</i>"
-    rem2_display = f"<blockquote>{rem2}</blockquote>" if rem2 else "<i>Не задано</i>"
+    rem1_display = f"<blockquote>{rem1}</blockquote>" if rem1 else f"<blockquote>{default_rem1}</blockquote> (по умолчанию)"
+    rem2_display = f"<blockquote>{rem2}</blockquote>" if rem2 else f"<blockquote>{default_rem2}</blockquote> (по умолчанию)"
     hours = salon_config.get("reminder_2_hours", 2)
     
     text = (
         "🔔 <b>Настройки напоминаний</b>\n\n"
         "1. Первое уведомление отправляется за <b>24 часа</b>.\n"
-        f"Текущий текст:\n{rem1_display}\n\n"
+        f"Установленный текст:\n{rem1_display}\n\n"
         f"2. Второе уведомление отправляется за <b>{hours} ч.</b> до записи.\n"
-        f"Текущий текст:\n{rem2_display}"
+        f"Установленный текст:\n{rem2_display}"
     )
     await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.get_reminder_settings_keyboard())
 
@@ -297,7 +300,8 @@ async def process_bot_about_text(message: types.Message, state: FSMContext):
 async def edit_rem_text_1_cb(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(EditReminderSettingsForm.text_1)
     current = salon_config.get("reminder_1_text", "")
-    current_display = f"\n\nТекущий текст:\n<blockquote>{current}</blockquote>" if current else ""
+    default_text = "Здравствуйте, {name}! Напоминаем о вашей записи завтра ({date}) в {time}."
+    current_display = f"\n\nТекущий текст:\n<blockquote>{current}</blockquote>" if current else f"\n\nТекст по умолчанию:\n<blockquote>{default_text}</blockquote>"
     await callback.message.answer(
         "Введите новый текст для <b>первого напоминания</b>."
         + current_display
@@ -312,7 +316,8 @@ async def edit_rem_text_1_cb(callback: types.CallbackQuery, state: FSMContext):
 async def edit_rem_text_2_cb(callback: types.CallbackQuery, state: FSMContext):
     await state.set_state(EditReminderSettingsForm.text_2)
     current = salon_config.get("reminder_2_text", "")
-    current_display = f"\n\nТекущий текст:\n<blockquote>{current}</blockquote>" if current else ""
+    default_text = "Здравствуйте, {name}! Напоминаем, ваша запись состоится сегодня ({date}) в {time}."
+    current_display = f"\n\nТекущий текст:\n<blockquote>{current}</blockquote>" if current else f"\n\nТекст по умолчанию:\n<blockquote>{default_text}</blockquote>"
     await callback.message.answer(
         "Введите новый текст для <b>второго напоминания</b>."
         + current_display
