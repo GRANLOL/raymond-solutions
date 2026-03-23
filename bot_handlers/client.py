@@ -352,8 +352,8 @@ async def my_bookings_handler(message: types.Message):
     if not active_bookings:
         await message.answer(
             (
-                "📋 <b>Активных записей сейчас нет</b>\n\n"
-                f"🕘 Записей в истории: <b>{history_count}</b>\n"
+                "🗓 <b>Актуальных записей сейчас нет</b>\n\n"
+                f"🕰 Записей в истории: <b>{history_count}</b>\n"
                 "Если захотите, откройте вкладку «История записей» или оформите новый визит."
             ),
             parse_mode="HTML",
