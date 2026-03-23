@@ -97,6 +97,15 @@ async def edit_btn_txt_cb(callback: types.CallbackQuery, state: FSMContext):
     text = "Введите текст, который будет отправлять бот при нажатии на эту кнопку.\n\nПоддерживается HTML разметка (теги &lt;b&gt;, &lt;i&gt;, &lt;a&gt;)."
     if btn_id == "address":
         text += "\n\n<i>Отправьте <code>-</code>, чтобы вернуть стандартный вывод адреса с картой.</i>"
+        if not current_txt:
+            address = salon_config.get("address", "Адрес не указан.")
+            hours = salon_config.get("working_hours", "")
+            map_url = salon_config.get("map_url", "")
+            current_txt = f"📍 <b>Как нас найти</b>\n\n<b>Адрес:</b>\n{address}\n"
+            if hours:
+                current_txt += f"\n<b>Часы работы:</b> <i>{hours}</i>\n"
+            if map_url:
+                current_txt += f"\n<a href='{map_url}'>Открыть на карте</a>"
         
     if current_txt:
         # Escape HTML symbols so that it's displayed raw inside the <code> block for easy copy-pasting
