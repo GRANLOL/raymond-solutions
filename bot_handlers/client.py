@@ -179,8 +179,99 @@ async def handle_price(message: types.Message):
         await message.answer("💎 <b>Услуги и цены пока не добавлены</b>\n\nСначала добавьте их в админ-панели.", parse_mode="HTML")
         return
 
-    text, total_pages = format_price_list_page(services, page=0, page_size=25)
-    await message.answer(text, parse_mode="HTML", reply_markup=keyboards.get_client_price_keyboard(0, total_pages))
+    from collections import defaultdict
+    categories = defaultdict(list)
+    for service in services:
+        cat_name = service.get("category_name") or "Без категории"
+        categories[(cat_name, str(service.get("category_id") or "none"))].append(service)
+
+    if len(categories) <= 1:
+        text, total_pages = format_price_list_page(services, page=0, page_size=25)
+        await message.answer(text, parse_mode="HTML", reply_markup=keyboards.get_client_price_keyboard(0, total_pages))
+        return
+
+    cat_options = [
+        (cat_name, cat_id_str) 
+        for (cat_name, cat_id_str) in categories.keys()
+    ]
+    # Put "Без категории" at the end if it exists
+    cat_options.sort(key=lambda x: (x[1] == "none", x[0]))
+
+    text = (
+        "💎 <b>Наш прайс-лист</b>\n\n"
+        "Выберите интересующую вас категорию:"
+    )
+    await message.answer(text, parse_mode="HTML", reply_markup=keyboards.get_client_categories_keyboard(cat_options))
+
+
+@router.callback_query(F.data.startswith("client_price_cat_"))
+async def client_price_cat_cb(callback: types.CallbackQuery):
+    cat_id_str = callback.data.replace("client_price_cat_", "")
+    
+    services = await database.get_all_services()
+    if not services:
+        await callback.answer("Услуги не найдены", show_alert=True)
+        return
+
+    if cat_id_str == "none":
+        cat_services = [s for s in services if not s.get("category_id")]
+    else:
+        cat_services = [s for s in services if str(s.get("category_id")) == cat_id_str]
+
+    if not cat_services:
+        await callback.answer("В этой категории пока нет услуг", show_alert=True)
+        return
+
+    currency = get_currency_symbol()
+    cat_name = cat_services[0].get("category_name") or "Без категории"
+    
+    lines = [
+        f"💎 <b>{escape(cat_name)}</b>",
+        "━━━━━━━━━━━━━━━━━━",
+        "",
+    ]
+    for service in cat_services:
+        lines.append(f"▫️ {escape(service['name'])}")
+        lines.append(f"   <b>{escape(str(service['price']))} {currency}</b>\n")
+        
+    text = "\n".join(lines).rstrip()
+    
+    await callback.message.edit_text(
+        text, 
+        parse_mode="HTML", 
+        reply_markup=keyboards.get_client_category_back_keyboard()
+    )
+
+
+@router.callback_query(F.data == "client_price_back")
+async def client_price_back_cb(callback: types.CallbackQuery):
+    services = await database.get_all_services()
+    if not services:
+        await callback.answer("Услуги не найдены", show_alert=True)
+        return
+
+    from collections import defaultdict
+    categories = defaultdict(list)
+    for service in services:
+        cat_name = service.get("category_name") or "Без категории"
+        categories[(cat_name, str(service.get("category_id") or "none"))].append(service)
+
+    if len(categories) <= 1:
+        text, total_pages = format_price_list_page(services, page=0, page_size=25)
+        await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.get_client_price_keyboard(0, total_pages))
+        return
+
+    cat_options = [
+        (cat_name, cat_id_str) 
+        for (cat_name, cat_id_str) in categories.keys()
+    ]
+    cat_options.sort(key=lambda x: (x[1] == "none", x[0]))
+
+    text = (
+        "💎 <b>Наш прайс-лист</b>\n\n"
+        "Выберите интересующую вас категорию:"
+    )
+    await callback.message.edit_text(text, parse_mode="HTML", reply_markup=keyboards.get_client_categories_keyboard(cat_options))
 
 
 @router.callback_query(F.data.startswith("client_price_page_"))

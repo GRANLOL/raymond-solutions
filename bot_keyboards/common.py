@@ -220,3 +220,20 @@ def get_admin_booking_actions_keyboard(
 
     builder.row(InlineKeyboardButton(text="⬅️ Назад к списку", callback_data=f"bookings_page_{context}_{page}"))
     return builder.as_markup()
+
+
+def get_client_categories_keyboard(categories: list[tuple[str, str]]):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    builder = InlineKeyboardBuilder()
+    for cat_name, cat_id_str in categories:
+        builder.row(InlineKeyboardButton(text=cat_name, callback_data=f"client_price_cat_{cat_id_str}"))
+    return builder.as_markup()
+
+
+def get_client_category_back_keyboard():
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="⬅️ Назад к категориям", callback_data="client_price_back"))
+    return builder.as_markup()
