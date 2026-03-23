@@ -1,0 +1,592 @@
+2026-03-17 00:37:32 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 00:45:33 | INFO | root | Starting bot polling and FastAPI server...
+2026-03-17 00:45:33 | INFO | aiogram.dispatcher | Start polling
+2026-03-17 00:45:33 | INFO | reminders | Reminder scheduler started.
+2026-03-17 00:45:33 | INFO | __main__ | Database initialized.
+2026-03-17 00:45:33 | INFO | aiogram.dispatcher | Run polling for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 00:45:47 | INFO | aiogram.event | Update id=763066946 is handled. Duration 535 ms by bot id=8794074483
+2026-03-17 00:45:48 | INFO | aiogram.event | Update id=763066947 is handled. Duration 109 ms by bot id=8794074483
+2026-03-17 00:46:01 | INFO | aiogram.event | Update id=763066948 is handled. Duration 222 ms by bot id=8794074483
+2026-03-17 00:46:12 | INFO | aiogram.event | Update id=763066949 is handled. Duration 107 ms by bot id=8794074483
+2026-03-17 00:46:14 | INFO | aiogram.event | Update id=763066950 is handled. Duration 156 ms by bot id=8794074483
+2026-03-17 00:46:20 | INFO | aiogram.event | Update id=763066951 is handled. Duration 114 ms by bot id=8794074483
+2026-03-17 00:46:34 | INFO | aiogram.event | Update id=763066952 is handled. Duration 130 ms by bot id=8794074483
+2026-03-17 00:50:05 | INFO | aiogram.event | Update id=763066953 is handled. Duration 134 ms by bot id=8794074483
+2026-03-17 00:50:07 | INFO | aiogram.event | Update id=763066954 is handled. Duration 203 ms by bot id=8794074483
+2026-03-17 00:50:11 | INFO | aiogram.event | Update id=763066955 is not handled. Duration 155 ms by bot id=8794074483
+2026-03-17 00:50:11 | ERROR | aiogram.event | Cause exception while process update id=763066955 by bot id=8794074483
+ValueError: invalid literal for int() with base 10: 'all_0'
+Traceback (most recent call last):
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 320, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\fsm\middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 283, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 161, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 153, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 189, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 161, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 153, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 189, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 161, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 153, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 181, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\User\Desktop\Main Project\bot_handlers\general.py", line 423, in admin_booking_status_callback
+    await _show_booking_list(callback, context=context, page=int(page_str))
+                                                             ~~~^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'all_0'
+2026-03-17 00:50:12 | INFO | aiogram.event | Update id=763066956 is handled. Duration 231 ms by bot id=8794074483
+2026-03-17 00:50:15 | INFO | aiogram.event | Update id=763066957 is handled. Duration 250 ms by bot id=8794074483
+2026-03-17 00:50:17 | INFO | aiogram.event | Update id=763066958 is not handled. Duration 100 ms by bot id=8794074483
+2026-03-17 00:50:17 | ERROR | aiogram.event | Cause exception while process update id=763066958 by bot id=8794074483
+ValueError: invalid literal for int() with base 10: 'all_0'
+Traceback (most recent call last):
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 320, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\fsm\middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 283, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 161, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 153, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 189, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 161, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 153, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 189, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 161, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 153, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 181, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\User\Desktop\Main Project\bot_handlers\general.py", line 423, in admin_booking_status_callback
+    await _show_booking_list(callback, context=context, page=int(page_str))
+                                                             ~~~^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'all_0'
+2026-03-17 00:50:25 | INFO | aiogram.event | Update id=763066959 is handled. Duration 238 ms by bot id=8794074483
+2026-03-17 00:50:32 | INFO | aiogram.event | Update id=763066960 is handled. Duration 239 ms by bot id=8794074483
+2026-03-17 00:50:34 | INFO | aiogram.event | Update id=763066961 is handled. Duration 246 ms by bot id=8794074483
+2026-03-17 00:50:35 | INFO | aiogram.event | Update id=763066962 is not handled. Duration 93 ms by bot id=8794074483
+2026-03-17 00:50:35 | ERROR | aiogram.event | Cause exception while process update id=763066962 by bot id=8794074483
+ValueError: invalid literal for int() with base 10: 'all_0'
+Traceback (most recent call last):
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 320, in _process_update
+    response = await self.feed_update(bot, update, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 164, in feed_update
+    response = await self.update.wrap_outer_middleware(
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\middlewares\error.py", line 27, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\middlewares\user_context.py", line 58, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\fsm\middleware.py", line 43, in __call__
+    return await handler(event, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\dispatcher.py", line 283, in _listen_update
+    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 161, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 153, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 189, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 161, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 153, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 189, in _propagate_event
+    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 161, in propagate_event
+    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 153, in _wrapped
+    return await self._propagate_event(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<4 lines>...
+    )
+    ^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\router.py", line 181, in _propagate_event
+    response = await observer.trigger(event, **kwargs)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\telegram.py", line 126, in trigger
+    return await wrapped_inner(event, kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\User\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\aiogram\dispatcher\event\handler.py", line 71, in call
+    return await wrapped()
+           ^^^^^^^^^^^^^^^
+  File "C:\Users\User\Desktop\Main Project\bot_handlers\general.py", line 423, in admin_booking_status_callback
+    await _show_booking_list(callback, context=context, page=int(page_str))
+                                                             ~~~^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'all_0'
+2026-03-17 00:54:07 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 00:54:25 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 00:55:53 | INFO | aiogram.dispatcher | Polling stopped
+2026-03-17 00:55:53 | INFO | aiogram.dispatcher | Polling stopped for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 00:55:59 | INFO | root | Starting bot polling and FastAPI server...
+2026-03-17 00:55:59 | INFO | aiogram.dispatcher | Start polling
+2026-03-17 00:56:00 | INFO | reminders | Reminder scheduler started.
+2026-03-17 00:56:00 | INFO | __main__ | Database initialized.
+2026-03-17 00:56:00 | INFO | aiogram.dispatcher | Run polling for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 00:56:09 | INFO | aiogram.event | Update id=763066963 is handled. Duration 300 ms by bot id=8794074483
+2026-03-17 00:56:16 | INFO | aiogram.event | Update id=763066964 is handled. Duration 146 ms by bot id=8794074483
+2026-03-17 00:56:17 | INFO | aiogram.event | Update id=763066965 is handled. Duration 215 ms by bot id=8794074483
+2026-03-17 00:56:19 | INFO | aiogram.event | Update id=763066966 is handled. Duration 247 ms by bot id=8794074483
+2026-03-17 00:56:26 | INFO | aiogram.event | Update id=763066967 is handled. Duration 239 ms by bot id=8794074483
+2026-03-17 00:56:28 | INFO | aiogram.event | Update id=763066968 is handled. Duration 144 ms by bot id=8794074483
+2026-03-17 00:56:42 | INFO | aiogram.event | Update id=763066969 is handled. Duration 261 ms by bot id=8794074483
+2026-03-17 00:56:44 | INFO | aiogram.event | Update id=763066970 is handled. Duration 225 ms by bot id=8794074483
+2026-03-17 00:56:45 | INFO | aiogram.event | Update id=763066971 is handled. Duration 225 ms by bot id=8794074483
+2026-03-17 00:56:47 | INFO | aiogram.event | Update id=763066972 is handled. Duration 476 ms by bot id=8794074483
+2026-03-17 00:57:02 | INFO | aiogram.event | Update id=763066973 is handled. Duration 116 ms by bot id=8794074483
+2026-03-17 00:57:05 | INFO | aiogram.event | Update id=763066974 is handled. Duration 246 ms by bot id=8794074483
+2026-03-17 00:57:15 | INFO | aiogram.event | Update id=763066975 is handled. Duration 122 ms by bot id=8794074483
+2026-03-17 00:57:28 | INFO | aiogram.event | Update id=763066976 is handled. Duration 249 ms by bot id=8794074483
+2026-03-17 01:01:58 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 01:03:36 | INFO | aiogram.dispatcher | Polling stopped
+2026-03-17 01:03:36 | INFO | aiogram.dispatcher | Polling stopped for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 01:03:43 | INFO | root | Starting bot polling and FastAPI server...
+2026-03-17 01:03:43 | INFO | aiogram.dispatcher | Start polling
+2026-03-17 01:03:43 | INFO | reminders | Reminder scheduler started.
+2026-03-17 01:03:43 | INFO | __main__ | Database initialized.
+2026-03-17 01:03:43 | INFO | aiogram.dispatcher | Run polling for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 01:07:32 | INFO | aiogram.event | Update id=763066977 is handled. Duration 405 ms by bot id=8794074483
+2026-03-17 01:07:36 | INFO | aiogram.event | Update id=763066978 is handled. Duration 260 ms by bot id=8794074483
+2026-03-17 01:08:58 | INFO | aiogram.event | Update id=763066979 is handled. Duration 134 ms by bot id=8794074483
+2026-03-17 01:14:54 | INFO | aiogram.event | Update id=763066980 is handled. Duration 225 ms by bot id=8794074483
+2026-03-17 01:15:07 | INFO | aiogram.event | Update id=763066981 is handled. Duration 132 ms by bot id=8794074483
+2026-03-17 01:15:08 | INFO | aiogram.event | Update id=763066982 is handled. Duration 128 ms by bot id=8794074483
+2026-03-17 01:15:10 | INFO | aiogram.event | Update id=763066983 is handled. Duration 199 ms by bot id=8794074483
+2026-03-17 01:15:12 | INFO | aiogram.event | Update id=763066984 is handled. Duration 128 ms by bot id=8794074483
+2026-03-17 01:15:25 | INFO | aiogram.event | Update id=763066985 is handled. Duration 128 ms by bot id=8794074483
+2026-03-17 01:15:26 | INFO | aiogram.event | Update id=763066986 is handled. Duration 129 ms by bot id=8794074483
+2026-03-17 01:16:56 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 01:17:03 | INFO | aiogram.event | Update id=763066987 is handled. Duration 228 ms by bot id=8794074483
+2026-03-17 01:17:05 | INFO | aiogram.event | Update id=763066988 is handled. Duration 248 ms by bot id=8794074483
+2026-03-17 01:17:07 | INFO | aiogram.event | Update id=763066989 is handled. Duration 126 ms by bot id=8794074483
+2026-03-17 01:21:53 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 01:26:29 | INFO | aiogram.dispatcher | Polling stopped
+2026-03-17 01:26:29 | INFO | aiogram.dispatcher | Polling stopped for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 01:26:37 | INFO | root | Starting bot polling and FastAPI server...
+2026-03-17 01:26:37 | INFO | aiogram.dispatcher | Start polling
+2026-03-17 01:26:37 | INFO | reminders | Reminder scheduler started.
+2026-03-17 01:26:37 | INFO | __main__ | Database initialized.
+2026-03-17 01:26:37 | INFO | aiogram.dispatcher | Run polling for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 01:26:58 | INFO | aiogram.event | Update id=763066990 is handled. Duration 298 ms by bot id=8794074483
+2026-03-17 01:27:01 | INFO | aiogram.event | Update id=763066991 is handled. Duration 249 ms by bot id=8794074483
+2026-03-17 01:27:07 | INFO | aiogram.event | Update id=763066992 is handled. Duration 1157 ms by bot id=8794074483
+2026-03-17 01:34:32 | INFO | aiogram.event | Update id=763066993 is handled. Duration 138 ms by bot id=8794074483
+2026-03-17 01:34:43 | INFO | aiogram.event | Update id=763066994 is handled. Duration 122 ms by bot id=8794074483
+2026-03-17 01:34:44 | INFO | aiogram.event | Update id=763066995 is handled. Duration 132 ms by bot id=8794074483
+2026-03-17 01:34:57 | INFO | aiogram.event | Update id=763066996 is handled. Duration 118 ms by bot id=8794074483
+2026-03-17 01:35:41 | INFO | aiogram.event | Update id=763066997 is handled. Duration 125 ms by bot id=8794074483
+2026-03-17 01:35:47 | INFO | aiogram.event | Update id=763066998 is handled. Duration 224 ms by bot id=8794074483
+2026-03-17 01:35:49 | INFO | aiogram.event | Update id=763066999 is handled. Duration 127 ms by bot id=8794074483
+2026-03-17 01:35:52 | INFO | aiogram.event | Update id=763067000 is handled. Duration 116 ms by bot id=8794074483
+2026-03-17 01:36:58 | INFO | aiogram.event | Update id=763067001 is handled. Duration 127 ms by bot id=8794074483
+2026-03-17 01:36:59 | INFO | aiogram.event | Update id=763067002 is handled. Duration 248 ms by bot id=8794074483
+2026-03-17 01:37:00 | INFO | aiogram.event | Update id=763067003 is handled. Duration 328 ms by bot id=8794074483
+2026-03-17 01:47:10 | INFO | aiogram.event | Update id=763067004 is handled. Duration 125 ms by bot id=8794074483
+2026-03-17 01:47:14 | INFO | aiogram.event | Update id=763067005 is handled. Duration 137 ms by bot id=8794074483
+2026-03-17 01:47:15 | INFO | aiogram.event | Update id=763067006 is handled. Duration 116 ms by bot id=8794074483
+2026-03-17 01:47:16 | INFO | aiogram.event | Update id=763067007 is handled. Duration 127 ms by bot id=8794074483
+2026-03-17 01:47:17 | INFO | aiogram.event | Update id=763067008 is handled. Duration 117 ms by bot id=8794074483
+2026-03-17 01:47:18 | INFO | aiogram.event | Update id=763067009 is handled. Duration 136 ms by bot id=8794074483
+2026-03-17 01:47:21 | INFO | aiogram.event | Update id=763067010 is handled. Duration 117 ms by bot id=8794074483
+2026-03-17 01:47:22 | INFO | aiogram.event | Update id=763067011 is handled. Duration 118 ms by bot id=8794074483
+2026-03-17 01:47:24 | INFO | aiogram.event | Update id=763067012 is handled. Duration 120 ms by bot id=8794074483
+2026-03-17 01:47:25 | INFO | aiogram.event | Update id=763067013 is handled. Duration 136 ms by bot id=8794074483
+2026-03-17 01:47:26 | INFO | aiogram.event | Update id=763067014 is handled. Duration 117 ms by bot id=8794074483
+2026-03-17 01:47:27 | INFO | aiogram.event | Update id=763067015 is handled. Duration 125 ms by bot id=8794074483
+2026-03-17 01:47:28 | INFO | aiogram.event | Update id=763067016 is handled. Duration 117 ms by bot id=8794074483
+2026-03-17 01:47:29 | INFO | aiogram.event | Update id=763067017 is handled. Duration 125 ms by bot id=8794074483
+2026-03-17 01:47:30 | INFO | aiogram.event | Update id=763067018 is handled. Duration 111 ms by bot id=8794074483
+2026-03-17 01:47:30 | INFO | aiogram.event | Update id=763067019 is handled. Duration 119 ms by bot id=8794074483
+2026-03-17 01:47:34 | INFO | aiogram.event | Update id=763067020 is handled. Duration 117 ms by bot id=8794074483
+2026-03-17 01:47:35 | INFO | aiogram.event | Update id=763067021 is handled. Duration 119 ms by bot id=8794074483
+2026-03-17 01:47:36 | INFO | aiogram.event | Update id=763067022 is handled. Duration 118 ms by bot id=8794074483
+2026-03-17 01:47:40 | INFO | aiogram.event | Update id=763067023 is handled. Duration 134 ms by bot id=8794074483
+2026-03-17 01:47:41 | INFO | aiogram.event | Update id=763067024 is handled. Duration 116 ms by bot id=8794074483
+2026-03-17 01:47:42 | INFO | aiogram.event | Update id=763067025 is handled. Duration 352 ms by bot id=8794074483
+2026-03-17 01:47:43 | INFO | aiogram.event | Update id=763067026 is handled. Duration 123 ms by bot id=8794074483
+2026-03-17 01:47:47 | INFO | aiogram.event | Update id=763067027 is handled. Duration 159 ms by bot id=8794074483
+2026-03-17 01:47:48 | INFO | aiogram.event | Update id=763067028 is handled. Duration 153 ms by bot id=8794074483
+2026-03-17 01:47:49 | INFO | aiogram.event | Update id=763067029 is handled. Duration 322 ms by bot id=8794074483
+2026-03-17 01:47:50 | INFO | aiogram.event | Update id=763067030 is handled. Duration 153 ms by bot id=8794074483
+2026-03-17 01:47:51 | INFO | aiogram.event | Update id=763067031 is handled. Duration 169 ms by bot id=8794074483
+2026-03-17 01:47:55 | INFO | aiogram.event | Update id=763067032 is handled. Duration 123 ms by bot id=8794074483
+2026-03-17 01:47:56 | INFO | aiogram.event | Update id=763067033 is handled. Duration 120 ms by bot id=8794074483
+2026-03-17 01:47:57 | INFO | aiogram.event | Update id=763067034 is handled. Duration 124 ms by bot id=8794074483
+2026-03-17 02:35:54 | INFO | aiogram.event | Update id=763067035 is handled. Duration 497 ms by bot id=8794074483
+2026-03-17 02:53:41 | INFO | aiogram.event | Update id=763067036 is handled. Duration 118 ms by bot id=8794074483
+2026-03-17 02:53:49 | INFO | aiogram.event | Update id=763067037 is handled. Duration 131 ms by bot id=8794074483
+2026-03-17 03:11:37 | INFO | reminders | Scheduled backup created: C:\Users\User\Desktop\Main Project\backups\bookings_20260317_031137.db
+2026-03-17 20:55:26 | INFO | root | Starting bot polling and FastAPI server...
+2026-03-17 20:55:26 | INFO | aiogram.dispatcher | Start polling
+2026-03-17 20:55:26 | INFO | reminders | Reminder scheduler started.
+2026-03-17 20:55:26 | INFO | __main__ | Database initialized.
+2026-03-17 20:55:26 | INFO | aiogram.dispatcher | Run polling for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 20:55:27 | INFO | aiogram.event | Update id=763067038 is handled. Duration 445 ms by bot id=8794074483
+2026-03-17 21:03:23 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 21:03:25 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-17 21:25:58 | INFO | aiogram.event | Update id=763067039 is handled. Duration 355 ms by bot id=8794074483
+2026-03-17 21:26:11 | INFO | aiogram.event | Update id=763067040 is handled. Duration 303 ms by bot id=8794074483
+2026-03-17 21:26:16 | INFO | aiogram.event | Update id=763067041 is handled. Duration 661 ms by bot id=8794074483
+2026-03-17 21:26:18 | INFO | aiogram.event | Update id=763067042 is handled. Duration 228 ms by bot id=8794074483
+2026-03-17 21:26:37 | INFO | aiogram.event | Update id=763067043 is handled. Duration 463 ms by bot id=8794074483
+2026-03-17 21:26:42 | INFO | aiogram.event | Update id=763067044 is handled. Duration 187 ms by bot id=8794074483
+2026-03-17 21:26:49 | INFO | aiogram.event | Update id=763067045 is handled. Duration 302 ms by bot id=8794074483
+2026-03-17 21:27:13 | INFO | aiogram.event | Update id=763067046 is handled. Duration 333 ms by bot id=8794074483
+2026-03-17 21:27:15 | INFO | aiogram.event | Update id=763067047 is handled. Duration 210 ms by bot id=8794074483
+2026-03-17 21:27:19 | INFO | aiogram.event | Update id=763067048 is handled. Duration 186 ms by bot id=8794074483
+2026-03-17 21:27:21 | INFO | aiogram.event | Update id=763067049 is handled. Duration 122 ms by bot id=8794074483
+2026-03-17 21:27:22 | INFO | aiogram.event | Update id=763067050 is handled. Duration 177 ms by bot id=8794074483
+2026-03-17 21:27:22 | INFO | aiogram.event | Update id=763067051 is handled. Duration 128 ms by bot id=8794074483
+2026-03-17 21:27:23 | INFO | aiogram.event | Update id=763067052 is handled. Duration 195 ms by bot id=8794074483
+2026-03-17 21:27:24 | INFO | aiogram.event | Update id=763067053 is handled. Duration 128 ms by bot id=8794074483
+2026-03-17 21:27:28 | INFO | aiogram.event | Update id=763067054 is handled. Duration 179 ms by bot id=8794074483
+2026-03-17 21:30:43 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 21:30:45 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-17 21:31:11 | INFO | aiogram.dispatcher | Polling stopped
+2026-03-17 21:31:11 | INFO | aiogram.dispatcher | Polling stopped for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 21:31:18 | INFO | root | Starting bot polling and FastAPI server...
+2026-03-17 21:31:18 | INFO | aiogram.dispatcher | Start polling
+2026-03-17 21:31:18 | INFO | reminders | Reminder scheduler started.
+2026-03-17 21:31:18 | INFO | __main__ | Database initialized.
+2026-03-17 21:31:18 | INFO | aiogram.dispatcher | Run polling for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-17 21:31:22 | INFO | aiogram.event | Update id=763067055 is handled. Duration 464 ms by bot id=8794074483
+2026-03-17 21:31:23 | INFO | aiogram.event | Update id=763067056 is handled. Duration 139 ms by bot id=8794074483
+2026-03-17 21:31:24 | INFO | aiogram.event | Update id=763067057 is handled. Duration 240 ms by bot id=8794074483
+2026-03-17 21:31:25 | INFO | aiogram.event | Update id=763067058 is handled. Duration 243 ms by bot id=8794074483
+2026-03-17 21:31:25 | INFO | aiogram.event | Update id=763067059 is handled. Duration 229 ms by bot id=8794074483
+2026-03-17 21:31:26 | INFO | aiogram.event | Update id=763067060 is handled. Duration 272 ms by bot id=8794074483
+2026-03-17 21:31:27 | INFO | aiogram.event | Update id=763067061 is handled. Duration 232 ms by bot id=8794074483
+2026-03-17 21:31:30 | INFO | aiogram.event | Update id=763067062 is handled. Duration 249 ms by bot id=8794074483
+2026-03-17 21:31:32 | INFO | aiogram.event | Update id=763067063 is handled. Duration 258 ms by bot id=8794074483
+2026-03-17 21:31:33 | INFO | aiogram.event | Update id=763067064 is handled. Duration 279 ms by bot id=8794074483
+2026-03-17 21:31:34 | INFO | aiogram.event | Update id=763067065 is handled. Duration 247 ms by bot id=8794074483
+2026-03-17 21:31:37 | INFO | aiogram.event | Update id=763067066 is handled. Duration 237 ms by bot id=8794074483
+2026-03-17 21:31:39 | INFO | aiogram.event | Update id=763067067 is handled. Duration 250 ms by bot id=8794074483
+2026-03-17 21:31:40 | INFO | aiogram.event | Update id=763067068 is handled. Duration 238 ms by bot id=8794074483
+2026-03-17 21:31:40 | INFO | aiogram.event | Update id=763067069 is handled. Duration 278 ms by bot id=8794074483
+2026-03-17 21:31:41 | INFO | aiogram.event | Update id=763067070 is handled. Duration 232 ms by bot id=8794074483
+2026-03-17 21:31:45 | INFO | aiogram.event | Update id=763067071 is handled. Duration 251 ms by bot id=8794074483
+2026-03-17 21:31:46 | INFO | aiogram.event | Update id=763067072 is handled. Duration 252 ms by bot id=8794074483
+2026-03-17 21:31:47 | INFO | aiogram.event | Update id=763067073 is handled. Duration 226 ms by bot id=8794074483
+2026-03-17 21:31:48 | INFO | aiogram.event | Update id=763067074 is handled. Duration 246 ms by bot id=8794074483
+2026-03-17 21:31:49 | INFO | aiogram.event | Update id=763067075 is handled. Duration 225 ms by bot id=8794074483
+2026-03-17 21:31:50 | INFO | aiogram.event | Update id=763067076 is handled. Duration 240 ms by bot id=8794074483
+2026-03-17 21:31:51 | INFO | aiogram.event | Update id=763067077 is handled. Duration 390 ms by bot id=8794074483
+2026-03-17 21:31:51 | INFO | aiogram.event | Update id=763067078 is handled. Duration 237 ms by bot id=8794074483
+2026-03-17 21:31:52 | INFO | aiogram.event | Update id=763067079 is handled. Duration 226 ms by bot id=8794074483
+2026-03-17 21:31:53 | INFO | aiogram.event | Update id=763067080 is handled. Duration 232 ms by bot id=8794074483
+2026-03-17 21:31:57 | INFO | aiogram.event | Update id=763067081 is handled. Duration 258 ms by bot id=8794074483
+2026-03-17 21:34:35 | INFO | aiogram.event | Update id=763067082 is handled. Duration 224 ms by bot id=8794074483
+2026-03-17 21:34:36 | INFO | aiogram.event | Update id=763067083 is handled. Duration 235 ms by bot id=8794074483
+2026-03-17 21:34:37 | INFO | aiogram.event | Update id=763067084 is handled. Duration 225 ms by bot id=8794074483
+2026-03-17 21:34:39 | INFO | aiogram.event | Update id=763067085 is handled. Duration 259 ms by bot id=8794074483
+2026-03-17 21:34:40 | INFO | aiogram.event | Update id=763067086 is handled. Duration 249 ms by bot id=8794074483
+2026-03-17 21:34:43 | INFO | aiogram.event | Update id=763067087 is handled. Duration 278 ms by bot id=8794074483
+2026-03-17 21:34:44 | INFO | aiogram.event | Update id=763067088 is handled. Duration 270 ms by bot id=8794074483
+2026-03-17 21:34:45 | INFO | aiogram.event | Update id=763067089 is handled. Duration 249 ms by bot id=8794074483
+2026-03-17 21:34:46 | INFO | aiogram.event | Update id=763067090 is handled. Duration 258 ms by bot id=8794074483
+2026-03-17 21:34:47 | INFO | aiogram.event | Update id=763067091 is handled. Duration 236 ms by bot id=8794074483
+2026-03-17 21:34:50 | INFO | aiogram.event | Update id=763067092 is handled. Duration 224 ms by bot id=8794074483
+2026-03-17 21:34:51 | INFO | aiogram.event | Update id=763067093 is handled. Duration 236 ms by bot id=8794074483
+2026-03-17 21:34:52 | INFO | aiogram.event | Update id=763067094 is handled. Duration 242 ms by bot id=8794074483
+2026-03-17 21:34:53 | INFO | aiogram.event | Update id=763067095 is handled. Duration 238 ms by bot id=8794074483
+2026-03-17 21:34:54 | INFO | aiogram.event | Update id=763067096 is handled. Duration 228 ms by bot id=8794074483
+2026-03-17 21:34:57 | INFO | aiogram.event | Update id=763067097 is handled. Duration 243 ms by bot id=8794074483
+2026-03-17 21:34:58 | INFO | aiogram.event | Update id=763067098 is handled. Duration 236 ms by bot id=8794074483
+2026-03-17 21:34:59 | INFO | aiogram.event | Update id=763067099 is handled. Duration 232 ms by bot id=8794074483
+2026-03-17 21:35:00 | INFO | aiogram.event | Update id=763067100 is handled. Duration 239 ms by bot id=8794074483
+2026-03-17 21:35:04 | INFO | aiogram.event | Update id=763067101 is handled. Duration 248 ms by bot id=8794074483
+2026-03-17 21:38:08 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 21:38:10 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-17 23:02:10 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ServerDisconnectedError: Server disconnected
+2026-03-17 23:02:10 | WARNING | aiogram.dispatcher | Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8794074483)
+2026-03-17 23:02:21 | INFO | aiogram.dispatcher | Connection established (tryings = 1, bot id = 8794074483)
+2026-03-17 23:44:27 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 23:44:27 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-17 23:44:41 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 23:44:42 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-17 23:44:58 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 23:45:00 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-17 23:50:24 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-17 23:50:25 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-18 00:04:47 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2026-03-18 00:04:47 | WARNING | aiogram.dispatcher | Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8794074483)
+2026-03-18 00:04:48 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:04:48 | WARNING | aiogram.dispatcher | Sleep for 1.251445 seconds and try again... (tryings = 1, bot id = 8794074483)
+2026-03-18 00:04:49 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:04:49 | WARNING | aiogram.dispatcher | Sleep for 1.647805 seconds and try again... (tryings = 2, bot id = 8794074483)
+2026-03-18 00:04:51 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:04:51 | WARNING | aiogram.dispatcher | Sleep for 2.294089 seconds and try again... (tryings = 3, bot id = 8794074483)
+2026-03-18 00:04:53 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:04:53 | WARNING | aiogram.dispatcher | Sleep for 3.016923 seconds and try again... (tryings = 4, bot id = 8794074483)
+2026-03-18 00:04:56 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:04:56 | WARNING | aiogram.dispatcher | Sleep for 4.026830 seconds and try again... (tryings = 5, bot id = 8794074483)
+2026-03-18 00:05:00 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:05:00 | WARNING | aiogram.dispatcher | Sleep for 4.867880 seconds and try again... (tryings = 6, bot id = 8794074483)
+2026-03-18 00:05:05 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:05:05 | WARNING | aiogram.dispatcher | Sleep for 5.175700 seconds and try again... (tryings = 7, bot id = 8794074483)
+2026-03-18 00:05:10 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:05:10 | WARNING | aiogram.dispatcher | Sleep for 5.028354 seconds and try again... (tryings = 8, bot id = 8794074483)
+2026-03-18 00:05:15 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:05:15 | WARNING | aiogram.dispatcher | Sleep for 5.023555 seconds and try again... (tryings = 9, bot id = 8794074483)
+2026-03-18 00:05:20 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:05:20 | WARNING | aiogram.dispatcher | Sleep for 4.919236 seconds and try again... (tryings = 10, bot id = 8794074483)
+2026-03-18 00:05:25 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:05:25 | WARNING | aiogram.dispatcher | Sleep for 4.940935 seconds and try again... (tryings = 11, bot id = 8794074483)
+2026-03-18 00:05:51 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Превышен таймаут семафора]
+2026-03-18 00:05:51 | WARNING | aiogram.dispatcher | Sleep for 4.867990 seconds and try again... (tryings = 12, bot id = 8794074483)
+2026-03-18 00:05:56 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:05:56 | WARNING | aiogram.dispatcher | Sleep for 5.166692 seconds and try again... (tryings = 13, bot id = 8794074483)
+2026-03-18 00:06:01 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:06:01 | WARNING | aiogram.dispatcher | Sleep for 4.944383 seconds and try again... (tryings = 14, bot id = 8794074483)
+2026-03-18 00:06:06 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:06:06 | WARNING | aiogram.dispatcher | Sleep for 4.852939 seconds and try again... (tryings = 15, bot id = 8794074483)
+2026-03-18 00:06:24 | INFO | aiogram.dispatcher | Connection established (tryings = 16, bot id = 8794074483)
+2026-03-18 00:32:19 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - Request timeout error
+2026-03-18 00:32:19 | WARNING | aiogram.dispatcher | Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 8794074483)
+2026-03-18 00:32:20 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:32:20 | WARNING | aiogram.dispatcher | Sleep for 1.344023 seconds and try again... (tryings = 1, bot id = 8794074483)
+2026-03-18 00:32:21 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:32:21 | WARNING | aiogram.dispatcher | Sleep for 1.591955 seconds and try again... (tryings = 2, bot id = 8794074483)
+2026-03-18 00:32:23 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:32:23 | WARNING | aiogram.dispatcher | Sleep for 2.125241 seconds and try again... (tryings = 3, bot id = 8794074483)
+2026-03-18 00:32:25 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:32:25 | WARNING | aiogram.dispatcher | Sleep for 2.616259 seconds and try again... (tryings = 4, bot id = 8794074483)
+2026-03-18 00:32:49 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Превышен таймаут семафора]
+2026-03-18 00:32:49 | WARNING | aiogram.dispatcher | Sleep for 3.343615 seconds and try again... (tryings = 5, bot id = 8794074483)
+2026-03-18 00:32:52 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:32:52 | WARNING | aiogram.dispatcher | Sleep for 4.213767 seconds and try again... (tryings = 6, bot id = 8794074483)
+2026-03-18 00:32:56 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:32:56 | WARNING | aiogram.dispatcher | Sleep for 4.975403 seconds and try again... (tryings = 7, bot id = 8794074483)
+2026-03-18 00:33:01 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:33:01 | WARNING | aiogram.dispatcher | Sleep for 4.984608 seconds and try again... (tryings = 8, bot id = 8794074483)
+2026-03-18 00:33:06 | ERROR | aiogram.dispatcher | Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientConnectorError: Cannot connect to host api.telegram.org:443 ssl:default [Сетевая папка недоступна. За информацией о разрешении проблем в сети обратитесь к справочной системе Windows]
+2026-03-18 00:33:06 | WARNING | aiogram.dispatcher | Sleep for 4.925376 seconds and try again... (tryings = 9, bot id = 8794074483)
+2026-03-18 00:33:21 | INFO | aiogram.dispatcher | Connection established (tryings = 10, bot id = 8794074483)
+2026-03-18 01:01:10 | INFO | aiogram.dispatcher | Polling stopped
+2026-03-18 01:01:10 | INFO | aiogram.dispatcher | Polling stopped for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-18 01:01:16 | INFO | root | Starting bot polling and FastAPI server...
+2026-03-18 01:01:16 | INFO | aiogram.dispatcher | Start polling
+2026-03-18 01:01:16 | INFO | reminders | Reminder scheduler started.
+2026-03-18 01:01:16 | INFO | __main__ | Database initialized.
+2026-03-18 01:01:16 | INFO | aiogram.dispatcher | Run polling for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-18 01:01:23 | INFO | aiogram.event | Update id=763067102 is handled. Duration 305 ms by bot id=8794074483
+2026-03-18 01:01:30 | INFO | aiogram.event | Update id=763067103 is handled. Duration 126 ms by bot id=8794074483
+2026-03-18 01:01:32 | INFO | aiogram.event | Update id=763067104 is handled. Duration 239 ms by bot id=8794074483
+2026-03-18 03:53:58 | INFO | root | Starting bot polling and FastAPI server...
+2026-03-18 03:53:58 | INFO | aiogram.dispatcher | Start polling
+2026-03-18 03:53:58 | INFO | reminders | Reminder scheduler started.
+2026-03-18 03:53:58 | INFO | reminders | Scheduled backup created: C:\Users\User\Desktop\Main Project\backups\bookings_20260318_035358.db
+2026-03-18 03:53:58 | INFO | __main__ | Database initialized.
+2026-03-18 03:53:59 | INFO | aiogram.dispatcher | Run polling for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-18 03:54:13 | INFO | aiogram.event | Update id=763067105 is handled. Duration 310 ms by bot id=8794074483
+2026-03-18 03:54:26 | INFO | aiogram.dispatcher | Polling stopped
+2026-03-18 03:54:26 | INFO | aiogram.dispatcher | Polling stopped for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-18 03:54:33 | INFO | root | Starting bot polling and FastAPI server...
+2026-03-18 03:54:33 | INFO | aiogram.dispatcher | Start polling
+2026-03-18 03:54:33 | INFO | reminders | Reminder scheduler started.
+2026-03-18 03:54:33 | INFO | __main__ | Database initialized.
+2026-03-18 03:54:33 | INFO | aiogram.dispatcher | Run polling for bot @my_super_nails_bot id=8794074483 - 'Nail Studio Deluxe'
+2026-03-18 03:54:53 | WARNING | __main__ | WebApp auth rejected: missing init data (header_present=False, init_data_len=0)
+2026-03-18 03:54:54 | WARNING | __main__ | WebApp auth rejected: missing init data (header_present=False, init_data_len=0)
+2026-03-18 03:55:02 | INFO | aiogram.event | Update id=763067106 is handled. Duration 411 ms by bot id=8794074483
+2026-03-18 03:55:03 | INFO | aiogram.event | Update id=763067107 is handled. Duration 114 ms by bot id=8794074483
+2026-03-18 04:13:26 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-18 04:13:28 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-18 04:15:40 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-18 04:15:42 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-18 07:23:35 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-18 07:23:36 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-18 07:23:59 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-18 07:24:00 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 03:19:15 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 03:19:17 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 03:45:39 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 03:45:40 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 03:45:52 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 03:45:54 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 03:59:24 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 03:59:26 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 03:59:36 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 03:59:38 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 04:16:03 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 04:16:05 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 04:56:03 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 04:56:05 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 04:56:58 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 04:57:00 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 05:08:26 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 05:08:28 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 05:08:42 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 05:08:44 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 05:14:19 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 05:14:22 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 05:22:04 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 05:22:07 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 05:26:37 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 05:26:39 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 05:27:26 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 05:27:28 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-19 05:30:39 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-19 05:30:42 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 02:46:23 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 02:46:26 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 03:30:48 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 03:30:51 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 03:32:55 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 03:32:58 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 03:44:29 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 03:44:33 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 03:47:22 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 03:47:25 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 03:56:56 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 03:56:59 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 04:17:58 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 04:18:01 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 08:05:04 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 08:05:07 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 08:08:41 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 08:08:44 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 08:22:55 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 08:22:58 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 08:25:26 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 08:25:29 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 08:27:10 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 08:27:13 | INFO | reminders | Skipped stale 24h reminder for booking 55
+2026-03-20 08:30:58 | WARNING | main | WebApp auth rejected: hash mismatch (header_present=True, init_data_len=3)
+2026-03-20 08:31:01 | INFO | reminders | Skipped stale 24h reminder for booking 55

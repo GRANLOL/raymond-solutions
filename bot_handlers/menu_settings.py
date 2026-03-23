@@ -91,7 +91,7 @@ async def edit_btn_txt_cb(callback: types.CallbackQuery, state: FSMContext):
     btn_id = callback.data.replace("edit_btn_txt_", "")
     await state.set_state(EditMenuButtonForm.text)
     await state.update_data(target_btn=btn_id)
-    text = "Введите текст, который будет отправлять бот при нажатии на эту кнопку.\n\nПоддерживается HTML разметка (теги <b>, <i>, <a>)."
+    text = "Введите текст, который будет отправлять бот при нажатии на эту кнопку.\n\nПоддерживается HTML разметка (теги &lt;b&gt;, &lt;i&gt;, &lt;a&gt;)."
     if btn_id == "address":
         text += "\n\n<i>Отправьте <code>-</code>, чтобы вернуть стандартный вывод адреса с картой.</i>"
     await callback.message.answer(text, parse_mode="HTML", reply_markup=keyboards.get_cancel_admin_action_keyboard("settings_menu_btns", "← Назад"))
