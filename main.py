@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    (PROJECT_ROOT / "uploads").mkdir(exist_ok=True)
     await init_db()
     logger.info("Database initialized.")
     yield
@@ -35,7 +34,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 app.state.bot = None
 
-app.mount("/uploads", StaticFiles(directory=PROJECT_ROOT / "uploads"), name="uploads")
+uploads_dir = PROJECT_ROOT / "uploads"
+uploads_dir.mkdir(exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
