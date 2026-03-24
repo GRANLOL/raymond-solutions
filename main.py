@@ -5,14 +5,15 @@ from contextlib import asynccontextmanager
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import BotCommand
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import FastAPI, Header, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 
 from booking_service import create_booking_and_notify
 from booking_validation import validate_web_booking
 from bot_handlers import router
-from config import BOT_TOKEN, PORT, WEBAPP_AUTH_REQUIRED, WEBAPP_URL, salon_config
+from config import BOT_TOKEN, PORT, PROJECT_ROOT, WEBAPP_AUTH_REQUIRED, WEBAPP_URL, salon_config
 from database import get_all_busy_slots, get_all_categories, get_all_services, init_db
 from logging_utils import configure_logging
 from rate_limit import get_rate_limit_remaining
@@ -25,6 +26,7 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    (PROJECT_ROOT / "uploads").mkdir(exist_ok=True)
     await init_db()
     logger.info("Database initialized.")
     yield
@@ -32,6 +34,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.state.bot = None
+
+app.mount("/uploads", StaticFiles(directory=PROJECT_ROOT / "uploads"), name="uploads")
 
 app.add_middleware(
     CORSMiddleware,
@@ -73,7 +77,7 @@ async def get_busy_slots(x_telegram_init_data: str | None = Header(default=None)
 
 
 @app.get("/api/get-content")
-async def get_content(x_telegram_init_data: str | None = Header(default=None)) -> dict:
+async def get_content(request: Request, x_telegram_init_data: str | None = Header(default=None)) -> dict:
     require_webapp_auth(x_telegram_init_data)
     services = await get_all_services()
     categories = await get_all_categories()
@@ -90,6 +94,10 @@ async def get_content(x_telegram_init_data: str | None = Header(default=None)) -
     webapp_salon_tagline = salon_config.get("webapp_salon_tagline", "онлайн запись")
     webapp_logo_type = salon_config.get("webapp_logo_type", "url")
     webapp_logo_url = salon_config.get("webapp_logo_url", "https://granlol.github.io/raymond-solutions/assets/logos/testlogo.png")
+    if webapp_logo_url.startswith("/uploads/"):
+        base_domain = str(request.base_url).rstrip("/")
+        webapp_logo_url = f"{base_domain}{webapp_logo_url}"
+        
     webapp_logo_text = salon_config.get("webapp_logo_text", "")
 
     return {

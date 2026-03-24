@@ -4,6 +4,7 @@ from bot_handlers.base import F, FSMContext, Router, keyboards, salon_config, up
 from bot_handlers.settings import _is_admin
 from bot_keyboards.settings import get_menu_buttons_keyboard, get_menu_button_edit_keyboard, get_portfolio_editor_keyboard, get_webapp_header_keyboard
 from bot_handlers.states import EditMenuButtonForm, EditPortfolioGalleryForm, EditWebAppHeaderForm
+from aiogram import Bot
 
 router = Router()
 
@@ -397,14 +398,31 @@ async def webapp_edit_logo_data_cb(callback: types.CallbackQuery, state: FSMCont
     await callback.answer()
 
 
-@router.message(EditWebAppHeaderForm.logo_url)
-async def process_webapp_logo_url(message: types.Message, state: FSMContext):
-    text = message.text.strip()
-    if text == "-":
-        text = ""
-    update_config("webapp_logo_url", text)
+@router.message(EditWebAppHeaderForm.logo_url, F.text | F.photo)
+async def process_webapp_logo_url(message: types.Message, state: FSMContext, bot: Bot):
+    if message.photo:
+        import time
+        from config import PROJECT_ROOT
+        
+        photo = message.photo[-1]
+        file_id = photo.file_id
+        file = await bot.get_file(file_id)
+        ext = file.file_path.split('.')[-1]
+        filename = f"logo_{message.chat.id}_{int(time.time())}.{ext}"
+        
+        uploads_dir = PROJECT_ROOT / "uploads"
+        uploads_dir.mkdir(exist_ok=True)
+        save_path = uploads_dir / filename
+        await bot.download_file(file.file_path, destination=save_path)
+        update_config("webapp_logo_url", f"/uploads/{filename}")
+    else:
+        text = message.text.strip()
+        if text == "-":
+            text = ""
+        update_config("webapp_logo_url", text)
+        
     await state.clear()
-    await message.answer("✅ Ссылка/путь на картинку обновлена!", reply_markup=keyboards.get_cancel_admin_action_keyboard("settings_webapp_header", "◀️ В меню шапки"))
+    await message.answer("✅ Логотип обновлен!", reply_markup=keyboards.get_cancel_admin_action_keyboard("settings_webapp_header", "◀️ В меню шапки"))
 
 
 @router.message(EditWebAppHeaderForm.logo_text)
