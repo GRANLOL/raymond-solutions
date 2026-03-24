@@ -1,4 +1,5 @@
 import { config } from './config.js?v=15';
+import { store } from './store.js?v=15';
 import { tg, initTelegram } from './telegram.js?v=15';
 import { fetchContent, fetchBusySlots } from './api.js?v=15';
 import { populateServices, initServiceListeners } from './ui/services.js?v=15';
