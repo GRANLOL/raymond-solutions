@@ -20,30 +20,6 @@
   "timezone_offset": 5,
   "reminder_grace_minutes": 30,
   "working_hours": "ПН-ВС 10:00 - 21:00",
-  "price_list": [
-    {
-      "service": "Маникюр без покрытия",
-      "price": "1200"
-    },
-    {
-      "service": "Маникюр + Гель-лак",
-      "price": "2500"
-    },
-    {
-      "service": "Укрепление акрилом",
-      "price": "600"
-    },
-    {
-      "service": "Дизайн 1 ногтя",
-      "price": "200"
-    }
-  ],
-  "time_slots": [
-    "10:00",
-    "13:00",
-    "16:00",
-    "19:00"
-  ],
   "booking_window": 14,
   "max_active_bookings_per_user": 3,
   "bot_description": "",
