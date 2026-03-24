@@ -1,8 +1,8 @@
-import { tg } from '../telegram.js';
-import { store } from '../store.js';
-import { checkConfirmation } from './form.js';
-import { generateDates, generateTimes, getSlotAvailability, hasAvailableSlots } from './datetime.js';
-import { showToast } from './toast.js';
+import { tg } from '../telegram.js?v=15';
+import { store } from '../store.js?v=15';
+import { checkConfirmation } from './form.js?v=15';
+import { generateDates, generateTimes, getSlotAvailability, hasAvailableSlots } from './datetime.js?v=15';
+import { showToast } from './toast.js?v=15';
 
 const selectTrigger = document.getElementById('select-trigger');
 const selectLabel = document.getElementById('select-label');

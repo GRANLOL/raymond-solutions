@@ -1,4 +1,4 @@
-import { config } from './config.js';
+import { config } from './config.js?v=15';
 
 export const tg = window.Telegram.WebApp;
 

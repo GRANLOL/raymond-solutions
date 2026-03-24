@@ -1,6 +1,6 @@
-import { tg } from '../telegram.js';
-import { store } from '../store.js';
-import { checkConfirmation } from './form.js';
+import { tg } from '../telegram.js?v=15';
+import { store } from '../store.js?v=15';
+import { checkConfirmation } from './form.js?v=15';
 
 function getWorkingDayBounds() {
     const timeMatch = store.workingHours.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/);

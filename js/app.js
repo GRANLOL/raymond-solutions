@@ -1,12 +1,12 @@
-import { config } from './config.js';
-import { tg, initTelegram } from './telegram.js';
-import { fetchContent, fetchBusySlots } from './api.js';
-import { populateServices, initServiceListeners } from './ui/services.js';
-import { generateDates, generateTimes } from './ui/datetime.js';
-import { initFormListeners } from './ui/form.js';
-import { initModal } from './ui/modal.js';
-import { initPrivacyModal } from './ui/privacy.js';
-import './ui/toast.js';
+import { config } from './config.js?v=15';
+import { tg, initTelegram } from './telegram.js?v=15';
+import { fetchContent, fetchBusySlots } from './api.js?v=15';
+import { populateServices, initServiceListeners } from './ui/services.js?v=15';
+import { generateDates, generateTimes } from './ui/datetime.js?v=15';
+import { initFormListeners } from './ui/form.js?v=15';
+import { initModal } from './ui/modal.js?v=15';
+import { initPrivacyModal } from './ui/privacy.js?v=15';
+import './ui/toast.js?v=15';
 
 const SAVED_PHONE_KEY = 'savedBookingPhone';
 
