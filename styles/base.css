@@ -359,3 +359,60 @@ body.app-ready .container > *:nth-child(9) { transition-delay: 0.36s; }
         font-size: 11px;
     }
 }
+
+/* --- Error Container State --- */
+.error-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px 20px;
+    text-align: center;
+    height: 100%;
+    margin: auto 0;
+}
+
+.error-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    animation: pulse 2s infinite ease-in-out;
+}
+
+.error-title {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-color);
+    margin-bottom: 12px;
+}
+
+.error-message {
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 32px;
+}
+
+.error-retry-btn {
+    background: linear-gradient(135deg, var(--logo-gradient-1), var(--logo-gradient-2));
+    color: white;
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+.error-retry-btn:active {
+    opacity: 0.8;
+    transform: scale(0.96);
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 0.8; }
+}

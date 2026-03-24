@@ -122,6 +122,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Fetching data
         await fetchContent();
+        
+        if (store.hasConnectionError) {
+            document.getElementById('main-container').style.display = 'none';
+            document.getElementById('error-container').style.display = 'flex';
+            applyHeaderBranding();
+            return;
+        }
+
         await fetchBusySlots();
 
         applyHeaderBranding();

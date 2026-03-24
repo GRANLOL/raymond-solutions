@@ -2,6 +2,7 @@ import { config } from './config.js';
 
 // Central State Management
 export const store = {
+    hasConnectionError: false,
     selectedServiceId: null,
     selectedService: null,
     selectedDate: null,

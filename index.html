@@ -21,7 +21,14 @@
             <div class="salon-name" id="salon-name-display">Nail Studio Deluxe</div>
         </header>
 
-        <div class="container">
+        <div id="error-container" class="error-container" style="display: none;">
+            <div class="error-icon">⚠️</div>
+            <h2 class="error-title">Сервис временно недоступен</h2>
+            <p class="error-message">Мы не смогли подключиться к серверу.<br>Пожалуйста, попробуйте зайти немного позже.</p>
+            <button class="error-retry-btn" onclick="window.location.reload()">Обновить страницу</button>
+        </div>
+
+        <div class="container" id="main-container">
             <div class="section-title">Выберите услугу</div>
             <div class="custom-select-wrapper" id="service-wrapper">
                 <div class="custom-select-trigger" id="select-trigger">

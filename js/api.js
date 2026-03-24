@@ -96,13 +96,6 @@ export async function fetchContent() {
         }
     } catch (e) {
         console.error("Error fetching available content:", e);
-        store.dynamicServices = config.services;
-        store.workingHours = "10:00-20:00";
-        store.scheduleInterval = 30;
-        store.dynamicBookingWindow = 7;
-        store.workingDays = [1, 2, 3, 4, 5, 6, 0];
-        store.blacklistedDates = [];
-        store.showServiceDuration = true;
-        store.currencySymbol = '₸';
+        store.hasConnectionError = true;
     }
 }
