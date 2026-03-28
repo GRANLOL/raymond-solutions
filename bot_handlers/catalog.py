@@ -126,7 +126,25 @@ async def eds_name_callback(callback: types.CallbackQuery, state: FSMContext):
 async def process_edit_service_name(message: types.Message, state: FSMContext):
     data = await state.get_data()
     srv_id = data["service_id"]
-    await database.update_service_name(srv_id, message.text)
+    service = await database.get_service_by_id(srv_id)
+    if not service:
+        await state.clear()
+        await message.answer("Услуга не найдена.")
+        return
+
+    new_name = message.text.strip()
+    if not new_name:
+        await message.answer("Название услуги не должно быть пустым.", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+        return
+
+    if await database.service_name_exists(new_name, service.get("category_id"), exclude_service_id=srv_id):
+        await message.answer(
+            "В этой категории уже есть услуга с таким названием. Используйте другое название.",
+            reply_markup=keyboards.get_cancel_admin_action_keyboard(),
+        )
+        return
+
+    await database.update_service_name(srv_id, new_name)
     await state.clear()
 
     service = await database.get_service_by_id(srv_id)
@@ -481,7 +499,7 @@ async def process_wizard_service_price(message: types.Message, state: FSMContext
 @router.message(WizardAddServiceForm.duration)
 async def process_wizard_service_duration(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    name = data['name']
+    name = (data['name'] or '').strip()
     target_id = data['target_id']
     price = data['price']
 
@@ -489,6 +507,13 @@ async def process_wizard_service_duration(message: types.Message, state: FSMCont
         duration = int(message.text.strip())
     except ValueError:
         await message.answer("Пожалуйста, введите число минут, например: 60.", reply_markup=keyboards.get_cancel_admin_action_keyboard())
+        return
+
+    if await database.service_name_exists(name, target_id):
+        await message.answer(
+            "В этой категории уже есть услуга с таким названием. Используйте другое название.",
+            reply_markup=keyboards.get_cancel_admin_action_keyboard(),
+        )
         return
 
     await database.add_service(name=name, price=price, duration=duration, description="", category_id=target_id)
@@ -671,7 +696,7 @@ async def process_service_price(message: types.Message, state: FSMContext):
 @router.message(AddServiceForm.duration)
 async def process_service_duration(message: types.Message, state: FSMContext):
     data = await state.get_data()
-    name = data['name']
+    name = (data['name'] or '').strip()
     category_id = data.get('category_id')
     price = data['price']
 
@@ -679,6 +704,10 @@ async def process_service_duration(message: types.Message, state: FSMContext):
         duration = int(message.text.strip())
     except ValueError:
         await message.answer("Пожалуйста, введите число минут, например: 60.")
+        return
+
+    if await database.service_name_exists(name, category_id):
+        await message.answer("В этой категории уже есть услуга с таким названием. Используйте другое название.")
         return
 
     await database.add_service(name=name, price=price, duration=duration, description="", category_id=category_id)

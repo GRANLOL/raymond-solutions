@@ -40,6 +40,7 @@ THIN_BORDER = Border(
 )
 BOOKINGS_PAGE_SIZE = 10
 ADMIN_SERVICE_PAGE_SIZE = 12
+CLIENTS_PAGE_SIZE = 10
 
 SOURCE_LABELS = {
     "telegram": "Telegram",
@@ -58,6 +59,7 @@ MENU_ESCAPE_TEXTS = {
     "🗓 На сегодня",
     "📅 По дате",
     "📊 Статистика",
+    "👥 Клиенты",
     "📃 Excel",
     "🔎 Поиск",
     "🕒 Свободные окна",
@@ -705,6 +707,65 @@ async def export_clients_excel_callback(callback: types.CallbackQuery):
         caption="👥 <b>Клиентская база</b>",
         build_fn=_build_clients_workbook,
         rows=rows,
+    )
+
+
+@router.message(F.text == "👥 Клиенты")
+async def clients_menu_handler(message: types.Message):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(message.from_user.id) != admin_id:
+        return
+
+    clients = await database.get_client_base_export()
+    text, page_items, page, total_pages = _render_clients_page(clients, 0)
+    await message.answer(
+        text,
+        parse_mode="HTML",
+        reply_markup=_build_clients_keyboard(page_items, page, total_pages),
+    )
+
+
+@router.callback_query(F.data.startswith("clients_page|"))
+async def clients_page_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+
+    await callback.answer()
+    _, page_token = callback.data.split("|", 1)
+    if page_token == "noop":
+        return
+
+    clients = await database.get_client_base_export()
+    text, page_items, page, total_pages = _render_clients_page(clients, int(page_token))
+    await callback.message.edit_text(
+        text,
+        parse_mode="HTML",
+        reply_markup=_build_clients_keyboard(page_items, page, total_pages),
+    )
+
+
+@router.callback_query(F.data.startswith("clients_open|"))
+async def clients_open_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+
+    await callback.answer()
+    _, page_str, index_str = callback.data.split("|", 2)
+    page = int(page_str)
+    index = int(index_str)
+    clients = await database.get_client_base_export()
+    page_items, page, total_pages = _paginate(clients, page, page_size=CLIENTS_PAGE_SIZE)
+    if index < 0 or index >= len(page_items):
+        await callback.answer("Клиент не найден", show_alert=True)
+        return
+
+    client = page_items[index]
+    await callback.message.edit_text(
+        _format_client_card(client),
+        parse_mode="HTML",
+        reply_markup=_build_clients_keyboard(page_items, page, total_pages),
     )
 
 
@@ -1704,6 +1765,79 @@ def _render_booking_page(bookings, title: str, page: int, *, source_filter: str 
     if not page_items:
         lines.append("Записей пока нет.")
     return "\n".join(lines), page_items, page, total_pages
+
+
+def _render_clients_page(clients: list[tuple], page: int):
+    page_items, page, total_pages = _paginate(clients, page, page_size=CLIENTS_PAGE_SIZE)
+    lines = [f"👥 <b>Клиенты</b>", f"<i>Страница {page + 1} из {total_pages}</i>", ""]
+
+    for idx, (_phone_key, name, phone, total, completed, cancelled, no_show, revenue, last_date_iso, _last_created_at) in enumerate(
+        page_items,
+        start=1 + page * CLIENTS_PAGE_SIZE,
+    ):
+        last_visit = "—"
+        if last_date_iso:
+            try:
+                last_visit = datetime.fromisoformat(last_date_iso).strftime("%d.%m.%Y")
+            except ValueError:
+                last_visit = last_date_iso
+
+        lines.append(
+            f"{idx}. <b>{escape(name or 'Без имени')}</b>\n"
+            f"Телефон: {escape(phone or '—')}\n"
+            f"Записей: <b>{int(total or 0)}</b> · Выполнено: <b>{int(completed or 0)}</b>\n"
+            f"Сумма: <b>{escape(format_money(revenue))}</b> · Последняя запись: <b>{escape(last_visit)}</b>\n"
+        )
+
+    if not page_items:
+        lines.append("Клиентская база пока пуста.")
+
+    return "\n".join(lines), page_items, page, total_pages
+
+
+def _build_clients_keyboard(page_items: list[tuple], page: int, total_pages: int):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    builder = InlineKeyboardBuilder()
+    for index, (_phone_key, name, phone, total, _completed, _cancelled, _no_show, _revenue, _last_date_iso, _last_created_at) in enumerate(page_items):
+        label = f"{name or 'Без имени'}"
+        if phone:
+            label += f" · {phone}"
+        else:
+            label += f" · {int(total or 0)} записей"
+        builder.row(types.InlineKeyboardButton(text=label[:64], callback_data=f"clients_open|{page}|{index}"))
+
+    nav_row = []
+    if page > 0:
+        nav_row.append(types.InlineKeyboardButton(text="⬅️", callback_data=f"clients_page|{page - 1}"))
+    nav_row.append(types.InlineKeyboardButton(text=f"{page + 1}/{total_pages}", callback_data="clients_page|noop"))
+    if page < total_pages - 1:
+        nav_row.append(types.InlineKeyboardButton(text="➡️", callback_data=f"clients_page|{page + 1}"))
+    builder.row(*nav_row)
+    return builder.as_markup()
+
+
+def _format_client_card(client: tuple) -> str:
+    _phone_key, name, phone, total, completed, cancelled, no_show, revenue, last_date_iso, last_created_at = client
+    last_visit = "—"
+    if last_date_iso:
+        try:
+            last_visit = datetime.fromisoformat(last_date_iso).strftime("%d.%m.%Y")
+        except ValueError:
+            last_visit = last_date_iso
+
+    return (
+        "👤 <b>Карточка клиента</b>\n\n"
+        f"<b>Имя:</b> {escape(name or 'Без имени')}\n"
+        f"<b>Телефон:</b> {escape(phone or '—')}\n"
+        f"<b>Всего записей:</b> {int(total or 0)}\n"
+        f"<b>Выполнено:</b> {int(completed or 0)}\n"
+        f"<b>Отменено:</b> {int(cancelled or 0)}\n"
+        f"<b>Не пришел:</b> {int(no_show or 0)}\n"
+        f"<b>Сумма по выполненным:</b> {escape(format_money(revenue))}\n"
+        f"<b>Последняя запись:</b> {escape(last_visit)}\n"
+        f"<b>Последнее создание:</b> {escape(_format_iso_to_date(last_created_at))}"
+    )
 
 
 async def _show_booking_list(message_or_callback, *, context: str, page: int = 0, source_filter: str = "all", target_date: str | None = None):

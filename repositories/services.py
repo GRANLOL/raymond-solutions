@@ -14,6 +14,33 @@ async def add_service(name: str, price: str, duration: int = 60, description: st
         await db.execute("INSERT INTO services (name, price, duration, description, category_id) VALUES (?, ?, ?, ?, ?)", (name, price, duration, description, category_id))
         await db.commit()
 
+
+async def service_name_exists(name: str, category_id: int | None, *, exclude_service_id: int | None = None) -> bool:
+    normalized_name = (name or "").strip()
+    if not normalized_name:
+        return False
+
+    query = """
+        SELECT 1
+        FROM services
+        WHERE lower(trim(name)) = lower(trim(?))
+          AND (
+                (category_id IS NULL AND ? IS NULL)
+                OR category_id = ?
+          )
+    """
+    params: list = [normalized_name, category_id, category_id]
+
+    if exclude_service_id is not None:
+        query += " AND id != ?"
+        params.append(exclude_service_id)
+
+    query += " LIMIT 1"
+
+    async with db_connect() as db:
+        async with db.execute(query, tuple(params)) as cursor:
+            return await cursor.fetchone() is not None
+
 async def update_service_category(service_id: int, category_id: int | None):
     async with db_connect() as db:
         await db.execute("UPDATE services SET category_id = ? WHERE id = ?", (category_id, service_id))
