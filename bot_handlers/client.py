@@ -207,7 +207,16 @@ async def price_page_cb(callback: types.CallbackQuery):
 
 
 def is_address_btn(message: types.Message) -> bool:
-    return message.text in (salon_config.get("custom_btn_address_lbl", "📍 Адрес и контакты"), "📌 Адрес")
+    text = (message.text or "").strip()
+    configured = str(salon_config.get("custom_btn_address_lbl", "") or "").strip()
+    known_variants = {
+        configured,
+        "📍 Адрес и контакты",
+        "📌 Адрес и контакты",
+        "📍 Адрес",
+        "📌 Адрес",
+    }
+    return text in {value for value in known_variants if value}
 
 @router.message(is_address_btn)
 async def handle_address(message: types.Message):
@@ -304,7 +313,17 @@ async def handle_portfolio(message: types.Message):
     )
 
 
-@router.message(F.text.in_({"📅 Записаться", "📲 Записаться", "📅 Онлайн-запись"}))
+def is_booking_btn(message: types.Message) -> bool:
+    text = (message.text or "").strip()
+    return text in {
+        "📅 Записаться",
+        "📲 Записаться",
+        "📅 Онлайн-запись",
+        "🗓 Онлайн-запись",
+    }
+
+
+@router.message(is_booking_btn)
 async def launch_booking_webapp(message: types.Message):
     await message.answer(
         "📅 <b>Онлайн-запись</b>\n\nВыберите удобное время и оформите запись онлайн.",
