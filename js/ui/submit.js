@@ -65,6 +65,7 @@ export async function submitData() {
     modalSubmit.textContent = 'Подтверждаем...';
 
     const data = {
+        service_id: store.selectedServiceId,
         service: store.selectedService,
         date: store.selectedDate,
         time: store.selectedTime,

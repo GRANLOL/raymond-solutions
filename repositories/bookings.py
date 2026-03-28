@@ -269,8 +269,12 @@ async def create_manual_booking(
     source: str = "manual",
     notes: str | None = None,
 ) -> bool:
+    linked_user_id = None
+    if phone:
+        linked_user_id = await get_existing_user_id_by_phone(phone)
+
     return await create_booking_if_available(
-        user_id=None,
+        user_id=linked_user_id,
         name=name,
         phone=phone,
         date=date,
@@ -317,6 +321,30 @@ async def get_client_snapshot_by_phone(phone: str):
             "created_at": created_at,
             "total_bookings": len(matches),
         }
+
+
+async def get_existing_user_id_by_phone(phone: str) -> int | None:
+    normalized = _normalize_phone_digits(phone)
+    if not normalized:
+        return None
+
+    async with db_connect() as db:
+        async with db.execute(
+            """
+            SELECT user_id, phone
+            FROM bookings
+            WHERE user_id IS NOT NULL
+              AND phone IS NOT NULL
+              AND TRIM(phone) != ''
+            ORDER BY id DESC
+            """
+        ) as cursor:
+            rows = await cursor.fetchall()
+
+    for user_id, raw_phone in rows:
+        if _normalize_phone_digits(raw_phone) == normalized:
+            return int(user_id)
+    return None
 
 
 async def attach_bookings_to_user_by_phone(phone: str, user_id: int) -> int:

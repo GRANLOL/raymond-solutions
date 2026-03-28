@@ -39,13 +39,14 @@ def slot_overlaps(slot_start: int, slot_duration: int, busy_start: int, busy_dur
 
 
 async def validate_web_booking(data: dict) -> tuple[dict | None, str | None]:
+    service_id_raw = data.get("service_id")
     service_name = (data.get("service") or "").strip()
     date_str = (data.get("date") or "").strip()
     time_str = (data.get("time") or "").strip()
     client_name = (data.get("name") or "").strip()
     phone = normalize_phone(data.get("phone"))
 
-    if not service_name:
+    if not service_name and not service_id_raw:
         return None, "Не удалось определить услугу. Выберите услугу заново."
     if not date_str or not time_str:
         return None, "Дата или время записи не указаны. Откройте форму и выберите слот заново."
@@ -54,7 +55,16 @@ async def validate_web_booking(data: dict) -> tuple[dict | None, str | None]:
     if not phone:
         return None, "Телефон указан в неверном формате. Используйте номер в формате +7."
 
-    service = await database.get_service_by_name(service_name)
+    service = None
+    if service_id_raw not in (None, ""):
+        try:
+            service = await database.get_service_by_id(int(service_id_raw))
+        except (TypeError, ValueError):
+            service = None
+
+    if not service and service_name:
+        service = await database.get_service_by_name(service_name)
+
     if not service:
         return None, "Выбранная услуга больше недоступна. Обновите форму и попробуйте снова."
 
