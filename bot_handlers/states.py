@@ -128,6 +128,16 @@ class AdminAvailabilityForm(StatesGroup):
     date = State()
 
 
+class AdminBookingsByDateForm(StatesGroup):
+    date = State()
+
+
+class AdminEditBookingForm(StatesGroup):
+    name = State()
+    phone = State()
+    notes = State()
+
+
 class EditMenuButtonForm(StatesGroup):
     target_btn = State()
     label = State()

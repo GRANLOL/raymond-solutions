@@ -11,7 +11,7 @@ from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
 from booking_validation import normalize_phone, parse_working_hours, slot_overlaps
 from time_utils import get_salon_now
-from .states import AdminAvailabilityForm, ManualBookingForm, SearchBookingForm
+from .states import AdminAvailabilityForm, AdminBookingsByDateForm, AdminEditBookingForm, ManualBookingForm, SearchBookingForm
 
 from .base import (
     Command,
@@ -1279,3 +1279,523 @@ async def admin_booking_status_callback(callback: types.CallbackQuery):
     await callback.answer("Статус обновлен")
     await _show_booking_list(callback, context=context, page=int(page_str))
 booking_actions_callback = booking_actions_callback_v2
+
+
+def _short_name(name: str, limit: int = 18) -> str:
+    value = (name or "").strip()
+    if len(value) <= limit:
+        return value
+    return value[: limit - 1].rstrip() + "..."
+
+
+def _normalize_context_value(value: str | None) -> str | None:
+    if not value or value == "-":
+        return None
+    return value
+
+
+def _build_booking_filters_markup(bookings, context: str, page: int, total_pages: int, *, source_filter: str = "all", date_value: str | None = None):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    builder = InlineKeyboardBuilder()
+    status_prefix = {
+        "scheduled": "🟢",
+        "completed": "✅",
+        "no_show": "🟠",
+        "cancelled": "❌",
+    }
+    date_token = date_value or "-"
+
+    for booking_id, name, _phone, date, time, _price, status in bookings:
+        label = f"{status_prefix.get(status, '•')} {time} · {_short_name(name)}"
+        if context == "all":
+            label = f"{status_prefix.get(status, '•')} {date} · {time} · {_short_name(name)}"
+        builder.row(
+            types.InlineKeyboardButton(
+                text=label,
+                callback_data=f"booking_actions|{context}|{date_token}|{source_filter}|{page}|{booking_id}",
+            )
+        )
+
+    filter_options = [
+        ("Все", "all"),
+        ("TG", "telegram"),
+        ("WA", "whatsapp"),
+        ("IG", "instagram"),
+        ("📞", "phone"),
+        ("🏠", "offline"),
+        ("✍️", "manual"),
+    ]
+    first_row = []
+    second_row = []
+    for index, (label, value) in enumerate(filter_options):
+        display = f"· {label}" if value == source_filter else label
+        button = types.InlineKeyboardButton(
+            text=display,
+            callback_data=f"bookings_filter|{context}|{date_token}|{value}",
+        )
+        if index < 4:
+            first_row.append(button)
+        else:
+            second_row.append(button)
+    builder.row(*first_row)
+    builder.row(*second_row)
+
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append(
+            types.InlineKeyboardButton(
+                text="⬅️ Назад",
+                callback_data=f"bookings_page|{context}|{date_token}|{source_filter}|{page - 1}",
+            )
+        )
+    if page < total_pages - 1:
+        nav_buttons.append(
+            types.InlineKeyboardButton(
+                text="Вперёд ➡️",
+                callback_data=f"bookings_page|{context}|{date_token}|{source_filter}|{page + 1}",
+            )
+        )
+    if nav_buttons:
+        builder.row(*nav_buttons)
+
+    builder.row(types.InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_admin_action"))
+    return builder.as_markup()
+
+
+def _build_booking_actions_markup(
+    booking_id: int,
+    phone: str,
+    *,
+    context: str,
+    page: int,
+    status: str,
+    telegram_user_id: int | None,
+    source_filter: str = "all",
+    date_value: str | None = None,
+):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    builder = InlineKeyboardBuilder()
+    digits = normalize_phone(phone) or ""
+    digits = digits.replace("+", "")
+    date_token = date_value or "-"
+
+    contact_buttons = []
+    if telegram_user_id:
+        contact_buttons.append(types.InlineKeyboardButton(text="💬 Написать", url=f"tg://user?id={telegram_user_id}"))
+    elif digits:
+        contact_buttons.append(types.InlineKeyboardButton(text="💬 Написать", url=f"https://wa.me/{digits}"))
+    if digits:
+        contact_buttons.append(types.InlineKeyboardButton(text="📞 Показать номер", callback_data=f"show_phone_{digits}"))
+    if contact_buttons:
+        builder.row(*contact_buttons)
+
+    builder.row(
+        types.InlineKeyboardButton(text="✏️ Имя", callback_data=f"booking_edit_name|{booking_id}|{context}|{date_token}|{source_filter}|{page}"),
+        types.InlineKeyboardButton(text="📱 Телефон", callback_data=f"booking_edit_phone|{booking_id}|{context}|{date_token}|{source_filter}|{page}"),
+    )
+    builder.row(
+        types.InlineKeyboardButton(text="📍 Источник", callback_data=f"booking_edit_source|{booking_id}|{context}|{date_token}|{source_filter}|{page}"),
+        types.InlineKeyboardButton(text="📝 Комментарий", callback_data=f"booking_edit_notes|{booking_id}|{context}|{date_token}|{source_filter}|{page}"),
+    )
+
+    if status == "scheduled":
+        builder.row(
+            types.InlineKeyboardButton(
+                text="✅ Отметить выполненной",
+                callback_data=f"adminstatus|{booking_id}|completed|{context}|{date_token}|{source_filter}|{page}",
+            ),
+            types.InlineKeyboardButton(
+                text="🟠 Не пришел",
+                callback_data=f"adminstatus|{booking_id}|no_show|{context}|{date_token}|{source_filter}|{page}",
+            ),
+        )
+        builder.row(
+            types.InlineKeyboardButton(
+                text="❌ Отменить запись",
+                callback_data=f"adminstatus|{booking_id}|cancelled|{context}|{date_token}|{source_filter}|{page}",
+            )
+        )
+    else:
+        builder.row(
+            types.InlineKeyboardButton(
+                text="🔄 Вернуть в активные",
+                callback_data=f"adminstatus|{booking_id}|scheduled|{context}|{date_token}|{source_filter}|{page}",
+            )
+        )
+
+    builder.row(
+        types.InlineKeyboardButton(
+            text="⬅️ Назад к списку",
+            callback_data=f"bookings_page|{context}|{date_token}|{source_filter}|{page}",
+        )
+    )
+    return builder.as_markup()
+
+
+def _build_edit_source_markup(booking_id: int, *, context: str, page: int, source_filter: str = "all", date_value: str | None = None):
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    builder = InlineKeyboardBuilder()
+    date_token = date_value or "-"
+    for label, value in (
+        ("WhatsApp", "whatsapp"),
+        ("Instagram", "instagram"),
+        ("Звонок", "phone"),
+        ("Telegram", "telegram"),
+        ("Офлайн", "offline"),
+        ("Вручную", "manual"),
+    ):
+        builder.row(
+            types.InlineKeyboardButton(
+                text=label,
+                callback_data=f"booking_set_source|{booking_id}|{value}|{context}|{date_token}|{source_filter}|{page}",
+            )
+        )
+    builder.row(
+        types.InlineKeyboardButton(
+            text="⬅️ Назад",
+            callback_data=f"booking_actions|{context}|{date_token}|{source_filter}|{page}|{booking_id}",
+        )
+    )
+    builder.row(types.InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_admin_action"))
+    return builder.as_markup()
+
+
+async def _show_booking_card(message_or_callback, booking_id: int, *, context: str, page: int, source_filter: str = "all", date_value: str | None = None):
+    booking = await database.get_booking_admin_details(int(booking_id))
+    if not booking:
+        if isinstance(message_or_callback, types.CallbackQuery):
+            await message_or_callback.answer("Запись не найдена", show_alert=True)
+        else:
+            await message_or_callback.answer("Запись не найдена.")
+        return
+
+    booking_id, user_id, name, phone, date, time, status, duration, service_name, price, source, notes, created_by_admin = booking
+    text = (
+        "📝 <b>Карточка записи</b>\n\n"
+        f"<b>Клиент:</b> {escape(name)}\n"
+        f"<b>Телефон:</b> {escape(phone)}\n"
+        f"<b>Услуга:</b> {escape(service_name or '—')}\n"
+        f"<b>Дата:</b> {escape(date)}\n"
+        f"<b>Время:</b> {escape(time)}\n"
+        f"<b>Длительность:</b> {int(duration or 0)} мин\n"
+        f"<b>Сумма:</b> {escape(format_money(price))}\n"
+        f"<b>Источник:</b> {escape(_source_label(source))}\n"
+        f"<b>Создана админом:</b> {'Да' if int(created_by_admin or 0) else 'Нет'}\n"
+        f"<b>Статус:</b> {escape(_status_label(status))}\n"
+        f"<b>Комментарий:</b> {escape(notes or '—')}"
+    )
+    reply_markup = _build_booking_actions_markup(
+        booking_id,
+        phone,
+        context=context,
+        page=page,
+        status=status,
+        telegram_user_id=user_id,
+        source_filter=source_filter,
+        date_value=date_value,
+    )
+    if isinstance(message_or_callback, types.CallbackQuery):
+        await message_or_callback.message.edit_text(text, parse_mode="HTML", reply_markup=reply_markup)
+    else:
+        await message_or_callback.answer(text, parse_mode="HTML", reply_markup=reply_markup)
+
+
+def _render_booking_page(bookings, title: str, page: int, *, source_filter: str = "all"):
+    page_items, page, total_pages = _paginate(bookings, page)
+    lines = [f"🗓 <b>{title}</b>", f"<i>Страница {page + 1} из {total_pages}</i>", ""]
+    if source_filter != "all":
+        lines.extend([f"<b>Фильтр:</b> {_source_label(source_filter)}", ""])
+
+    for idx, (_booking_id, name, phone, date, time, price, status) in enumerate(page_items, start=1 + page * BOOKINGS_PAGE_SIZE):
+        safe_name = escape(name)
+        safe_phone = escape(phone)
+        safe_date = escape(date)
+        safe_time = escape(time)
+        status_badge = {
+            "scheduled": "🟢 Активна",
+            "completed": "✅ Выполнена",
+            "no_show": "🟠 Не пришел",
+            "cancelled": "❌ Отменена",
+        }.get(status, escape(_status_label(status)))
+        lines.append(
+            f"┌ <b>Запись #{idx}</b>\n"
+            f"├ <b>Когда:</b> {safe_date} в {safe_time}\n"
+            f"├ <b>Клиент:</b> {safe_name}\n"
+            f"├ <b>Телефон:</b> {safe_phone}\n"
+            f"├ <b>Статус:</b> {status_badge}\n"
+            f"└ <b>Сумма:</b> {escape(format_money(price))}\n"
+        )
+    if not page_items:
+        lines.append("Записей пока нет.")
+    return "\n".join(lines), page_items, page, total_pages
+
+
+async def _show_booking_list(message_or_callback, *, context: str, page: int = 0, source_filter: str = "all", target_date: str | None = None):
+    await database.sync_completed_bookings()
+    if context == "today":
+        today_str = datetime.now().strftime("%d.%m.%Y")
+        bookings = await database.get_bookings_by_date_detailed_filtered(today_str, source_filter)
+        title = f"Записи на сегодня ({today_str})"
+        date_value = today_str
+    elif context == "date" and target_date:
+        bookings = await database.get_bookings_by_date_detailed_filtered(target_date, source_filter)
+        title = f"Записи на дату ({target_date})"
+        date_value = target_date
+    else:
+        bookings = await database.get_all_bookings_detailed_filtered(source_filter)
+        title = "Все записи"
+        date_value = None
+
+    text, page_items, page, total_pages = _render_booking_page(bookings, title, page, source_filter=source_filter)
+    markup = _build_booking_filters_markup(
+        page_items,
+        context,
+        page,
+        total_pages,
+        source_filter=source_filter,
+        date_value=date_value,
+    )
+
+    if isinstance(message_or_callback, types.CallbackQuery):
+        await message_or_callback.message.edit_text(text, parse_mode="HTML", reply_markup=markup)
+    else:
+        await message_or_callback.answer(text, parse_mode="HTML", reply_markup=markup)
+
+
+@router.message(F.text == "📅 По дате")
+async def bookings_by_date_handler(message: types.Message, state):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(message.from_user.id) != admin_id:
+        return
+    await state.set_state(AdminBookingsByDateForm.date)
+    await message.answer("📅 <b>Просмотр по дате</b>\n\nВведите дату в формате <code>30.03.2026</code>.", parse_mode="HTML")
+
+
+@router.message(AdminBookingsByDateForm.date)
+async def bookings_by_date_value_handler(message: types.Message, state):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(message.from_user.id) != admin_id:
+        return
+    target_date = (message.text or "").strip()
+    if not _safe_parse_date(target_date):
+        await message.answer("Введите дату в формате <code>дд.мм.гггг</code>.", parse_mode="HTML")
+        return
+    await state.clear()
+    await _show_booking_list(message, context="date", page=0, source_filter="all", target_date=target_date)
+
+
+@router.callback_query(F.data.startswith("bookings_page|"))
+async def bookings_page_callback_v2(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    _, context, date_token, source_filter, page_str = callback.data.split("|", 4)
+    await _show_booking_list(
+        callback,
+        context=context,
+        page=int(page_str),
+        source_filter=source_filter,
+        target_date=_normalize_context_value(date_token),
+    )
+
+
+@router.callback_query(F.data.startswith("bookings_filter|"))
+async def bookings_filter_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    _, context, date_token, source_filter = callback.data.split("|", 3)
+    await _show_booking_list(
+        callback,
+        context=context,
+        page=0,
+        source_filter=source_filter,
+        target_date=_normalize_context_value(date_token),
+    )
+
+
+@router.callback_query(F.data.startswith("booking_actions|"))
+async def booking_actions_callback_pipe(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    _, context, date_token, source_filter, page_str, booking_id_str = callback.data.split("|", 5)
+    await _show_booking_card(
+        callback,
+        int(booking_id_str),
+        context=context,
+        page=int(page_str),
+        source_filter=source_filter,
+        date_value=_normalize_context_value(date_token),
+    )
+
+
+@router.callback_query(F.data.startswith("adminstatus|"))
+async def admin_booking_status_callback_v2(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer("Статус обновлен")
+    _, booking_id_str, status, context, date_token, source_filter, page_str = callback.data.split("|", 6)
+    await database.update_booking_status(int(booking_id_str), status)
+    await _show_booking_list(
+        callback,
+        context=context,
+        page=int(page_str),
+        source_filter=source_filter,
+        target_date=_normalize_context_value(date_token),
+    )
+
+
+@router.callback_query(F.data.startswith("booking_edit_name|"))
+async def booking_edit_name_callback(callback: types.CallbackQuery, state):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    _, booking_id_str, context, date_token, source_filter, page_str = callback.data.split("|", 5)
+    await state.set_state(AdminEditBookingForm.name)
+    await state.update_data(
+        edit_booking_id=int(booking_id_str),
+        edit_context=context,
+        edit_date_value=_normalize_context_value(date_token),
+        edit_source_filter=source_filter,
+        edit_page=int(page_str),
+    )
+    await callback.message.answer("✏️ Введите новое имя клиента.")
+
+
+@router.callback_query(F.data.startswith("booking_edit_phone|"))
+async def booking_edit_phone_callback(callback: types.CallbackQuery, state):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    _, booking_id_str, context, date_token, source_filter, page_str = callback.data.split("|", 5)
+    await state.set_state(AdminEditBookingForm.phone)
+    await state.update_data(
+        edit_booking_id=int(booking_id_str),
+        edit_context=context,
+        edit_date_value=_normalize_context_value(date_token),
+        edit_source_filter=source_filter,
+        edit_page=int(page_str),
+    )
+    await callback.message.answer("📱 Введите новый телефон клиента в формате +7.")
+
+
+@router.callback_query(F.data.startswith("booking_edit_notes|"))
+async def booking_edit_notes_callback(callback: types.CallbackQuery, state):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    _, booking_id_str, context, date_token, source_filter, page_str = callback.data.split("|", 5)
+    await state.set_state(AdminEditBookingForm.notes)
+    await state.update_data(
+        edit_booking_id=int(booking_id_str),
+        edit_context=context,
+        edit_date_value=_normalize_context_value(date_token),
+        edit_source_filter=source_filter,
+        edit_page=int(page_str),
+    )
+    await callback.message.answer("📝 Введите комментарий к записи. Отправьте <code>-</code>, чтобы очистить комментарий.", parse_mode="HTML")
+
+
+@router.callback_query(F.data.startswith("booking_edit_source|"))
+async def booking_edit_source_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer()
+    _, booking_id_str, context, date_token, source_filter, page_str = callback.data.split("|", 5)
+    await callback.message.edit_reply_markup(
+        reply_markup=_build_edit_source_markup(
+            int(booking_id_str),
+            context=context,
+            page=int(page_str),
+            source_filter=source_filter,
+            date_value=_normalize_context_value(date_token),
+        )
+    )
+
+
+@router.callback_query(F.data.startswith("booking_set_source|"))
+async def booking_set_source_callback(callback: types.CallbackQuery):
+    admin_id = getenv("ADMIN_ID")
+    if not admin_id or str(callback.from_user.id) != admin_id:
+        return
+    await callback.answer("Источник обновлен")
+    _, booking_id_str, source, context, date_token, source_filter, page_str = callback.data.split("|", 6)
+    await database.update_booking_source(int(booking_id_str), source)
+    await _show_booking_card(
+        callback,
+        int(booking_id_str),
+        context=context,
+        page=int(page_str),
+        source_filter=source_filter,
+        date_value=_normalize_context_value(date_token),
+    )
+
+
+@router.message(AdminEditBookingForm.name)
+async def booking_edit_name_value_handler(message: types.Message, state):
+    name = (message.text or "").strip()
+    if len(name) < 2:
+        await message.answer("Введите имя не короче 2 символов.")
+        return
+    data = await state.get_data()
+    await database.update_booking_name(int(data["edit_booking_id"]), name)
+    await state.clear()
+    await message.answer("✅ Имя обновлено.")
+    await _show_booking_card(
+        message,
+        int(data["edit_booking_id"]),
+        context=data["edit_context"],
+        page=int(data["edit_page"]),
+        source_filter=data["edit_source_filter"],
+        date_value=data.get("edit_date_value"),
+    )
+
+
+@router.message(AdminEditBookingForm.phone)
+async def booking_edit_phone_value_handler(message: types.Message, state):
+    phone = normalize_phone(message.text)
+    if not phone:
+        await message.answer("Телефон не похож на корректный номер. Используйте формат +7.")
+        return
+    data = await state.get_data()
+    await database.update_booking_phone(int(data["edit_booking_id"]), phone)
+    await state.clear()
+    await message.answer("✅ Телефон обновлен.")
+    await _show_booking_card(
+        message,
+        int(data["edit_booking_id"]),
+        context=data["edit_context"],
+        page=int(data["edit_page"]),
+        source_filter=data["edit_source_filter"],
+        date_value=data.get("edit_date_value"),
+    )
+
+
+@router.message(AdminEditBookingForm.notes)
+async def booking_edit_notes_value_handler(message: types.Message, state):
+    raw_notes = (message.text or "").strip()
+    notes = None if raw_notes in {"", "-"} else raw_notes
+    data = await state.get_data()
+    await database.update_booking_notes(int(data["edit_booking_id"]), notes)
+    await state.clear()
+    await message.answer("✅ Комментарий обновлен.")
+    await _show_booking_card(
+        message,
+        int(data["edit_booking_id"]),
+        context=data["edit_context"],
+        page=int(data["edit_page"]),
+        source_filter=data["edit_source_filter"],
+        date_value=data.get("edit_date_value"),
+    )

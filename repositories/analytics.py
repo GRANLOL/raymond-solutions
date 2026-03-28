@@ -12,7 +12,7 @@ async def _get_bookings_in_period(period_days: int):
     async with db_connect() as db:
         async with db.execute(
             """
-            SELECT date, time, price, service_name, phone, status
+            SELECT date, time, price, service_name, phone, status, COALESCE(source, 'telegram')
             FROM bookings
             """
         ) as cursor:
@@ -30,6 +30,7 @@ async def _get_bookings_in_period(period_days: int):
                     "service_name": row[3],
                     "phone": row[4],
                     "status": row[5] or "scheduled",
+                    "source": row[6] or "telegram",
                 }
             )
     return bookings
@@ -90,6 +91,14 @@ async def get_peak_hours(period_days: int, top_n: int = 3) -> list:
     bookings = _only_completed(await _get_bookings_in_period(period_days))
     counter = Counter(item["time"] for item in bookings if item["time"])
     return counter.most_common(top_n)
+
+
+async def get_source_stats(period_days: int) -> dict:
+    from collections import Counter
+
+    bookings = await _get_bookings_in_period(period_days)
+    counter = Counter(item.get("source") or "telegram" for item in bookings)
+    return dict(counter)
 
 
 async def get_client_stats(period_days: int) -> dict:

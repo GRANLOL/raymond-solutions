@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import timedelta
 
 from .base import _slot_overlaps, _time_to_minutes, _to_iso_date, aiosqlite, db_connect, datetime
@@ -9,6 +10,13 @@ from time_utils import build_reminder_schedule, combine_salon_datetime, get_salo
 
 class ActiveBookingLimitReachedError(Exception):
     pass
+
+
+def _normalize_phone_digits(phone: str | None) -> str:
+    digits = re.sub(r"\D", "", phone or "")
+    if digits.startswith("8") and len(digits) == 11:
+        digits = "7" + digits[1:]
+    return digits
 
 
 def _duration_from_range(start_time: str, end_time: str) -> int:
@@ -277,6 +285,40 @@ async def create_manual_booking(
     )
 
 
+async def attach_bookings_to_user_by_phone(phone: str, user_id: int) -> int:
+    normalized = _normalize_phone_digits(phone)
+    if not normalized:
+        return 0
+
+    async with db_connect() as db:
+        async with db.execute(
+            """
+            SELECT id, phone
+            FROM bookings
+            WHERE (user_id IS NULL OR user_id != ?)
+              AND phone IS NOT NULL
+            """,
+            (user_id,),
+        ) as cursor:
+            rows = await cursor.fetchall()
+
+        matching_ids = [
+            booking_id
+            for booking_id, raw_phone in rows
+            if _normalize_phone_digits(raw_phone) == normalized
+        ]
+        if not matching_ids:
+            return 0
+
+        placeholders = ", ".join("?" for _ in matching_ids)
+        await db.execute(
+            f"UPDATE bookings SET user_id = ? WHERE id IN ({placeholders})",
+            (user_id, *matching_ids),
+        )
+        await db.commit()
+        return len(matching_ids)
+
+
 async def get_booked_slots(date):
     async with db_connect() as db:
         async with db.execute(
@@ -443,6 +485,22 @@ async def get_all_bookings_detailed():
             return await cursor.fetchall()
 
 
+async def get_all_bookings_detailed_filtered(source: str | None = None):
+    query = """
+        SELECT b.id, b.name, b.phone, b.date, b.time, b.price, b.status
+        FROM bookings b
+    """
+    params: list = []
+    if source and source != "all":
+        query += " WHERE COALESCE(b.source, 'telegram') = ?"
+        params.append(source)
+    query += " ORDER BY COALESCE(b.date_iso, b.date), b.time"
+
+    async with db_connect() as db:
+        async with db.execute(query, tuple(params)) as cursor:
+            return await cursor.fetchall()
+
+
 async def clear_bookings():
     async with db_connect() as db:
         await db.execute("DELETE FROM bookings")
@@ -453,7 +511,7 @@ async def get_bookings_by_date_full(target_date: str):
     async with db_connect() as db:
         async with db.execute(
             """
-            SELECT b.name, b.phone, b.date, b.time, b.price
+            SELECT b.name, b.phone, b.date, b.time, b.price, b.service_name, COALESCE(b.source, 'telegram'), COALESCE(b.notes, ''), COALESCE(b.created_by_admin, 0)
             FROM bookings b
             WHERE b.date = ? AND b.status != 'cancelled'
             ORDER BY b.time
@@ -474,6 +532,23 @@ async def get_bookings_by_date_detailed(target_date: str):
             """,
             (target_date,),
         ) as cursor:
+            return await cursor.fetchall()
+
+
+async def get_bookings_by_date_detailed_filtered(target_date: str, source: str | None = None):
+    query = """
+        SELECT b.id, b.name, b.phone, b.date, b.time, b.price, b.status
+        FROM bookings b
+        WHERE b.date = ?
+    """
+    params: list = [target_date]
+    if source and source != "all":
+        query += " AND COALESCE(b.source, 'telegram') = ?"
+        params.append(source)
+    query += " ORDER BY b.time"
+
+    async with db_connect() as db:
+        async with db.execute(query, tuple(params)) as cursor:
             return await cursor.fetchall()
 
 
@@ -571,6 +646,30 @@ async def get_booking_admin_details(booking_id: int):
             (booking_id,),
         ) as cursor:
             return await cursor.fetchone()
+
+
+async def update_booking_name(booking_id: int, name: str):
+    async with db_connect() as db:
+        await db.execute("UPDATE bookings SET name = ? WHERE id = ?", (name, booking_id))
+        await db.commit()
+
+
+async def update_booking_phone(booking_id: int, phone: str):
+    async with db_connect() as db:
+        await db.execute("UPDATE bookings SET phone = ? WHERE id = ?", (phone, booking_id))
+        await db.commit()
+
+
+async def update_booking_source(booking_id: int, source: str):
+    async with db_connect() as db:
+        await db.execute("UPDATE bookings SET source = ? WHERE id = ?", (source, booking_id))
+        await db.commit()
+
+
+async def update_booking_notes(booking_id: int, notes: str | None):
+    async with db_connect() as db:
+        await db.execute("UPDATE bookings SET notes = ? WHERE id = ?", (notes, booking_id))
+        await db.commit()
 
 
 async def update_booking_status(booking_id: int, status: str):
@@ -759,10 +858,13 @@ async def search_bookings(query: str, limit: int = 10):
                OR phone LIKE ?
                OR date LIKE ?
                OR time LIKE ?
+               OR COALESCE(service_name, '') LIKE ?
+               OR COALESCE(source, 'telegram') LIKE ?
+               OR COALESCE(notes, '') LIKE ?
             ORDER BY COALESCE(date_iso, date) DESC, time DESC, id DESC
             LIMIT ?
             """,
-            (like_query, like_query, like_query, like_query, int(limit)),
+            (like_query, like_query, like_query, like_query, like_query, like_query, like_query, int(limit)),
         ) as cursor:
             return await cursor.fetchall()
 

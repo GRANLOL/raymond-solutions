@@ -52,8 +52,14 @@ async def create_booking_and_notify(
             f"У вас уже {active_limit} активные записи.\n\n"
             "Отмените одну из текущих записей, чтобы оформить новую."
         )
+
     if not booking_created:
         return False, "Этот слот уже занят.\n\nОбновите форму записи и выберите другое время."
+
+    try:
+        await database.attach_bookings_to_user_by_phone(phone, user_id)
+    except Exception:
+        logger.exception("Failed to attach bookings to Telegram user by phone", extra={"user_id": user_id})
 
     admin_text = (
         "🔔 <b>Новая запись</b>\n\n"

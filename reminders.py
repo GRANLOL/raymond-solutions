@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re
 from datetime import datetime, timedelta
 from html import escape
 
@@ -20,6 +21,15 @@ from runtime_state import get_runtime_value, set_runtime_value
 from time_utils import get_salon_now
 
 logger = logging.getLogger(__name__)
+
+SOURCE_LABELS = {
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "instagram": "Instagram",
+    "phone": "Звонок",
+    "offline": "Офлайн",
+    "manual": "Вручную",
+}
 
 
 def format_reminder(template: str, name: str, date: str, time: str) -> str:
@@ -43,6 +53,57 @@ def _is_stale_reminder(now: datetime, due_at_iso: str | None) -> bool:
     return now - due_at > _get_reminder_grace_delta()
 
 
+def _get_default_digest_hour() -> int:
+    working_hours = str(salon_config.get("working_hours", "10:00-20:00") or "")
+    match = re.search(r"(\d{1,2}):\d{2}", working_hours)
+    return int(match.group(1)) if match else 9
+
+
+def _get_digest_hour(config_key: str, default: int) -> int:
+    raw = salon_config.get(config_key)
+    if raw is None:
+        return default
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return default
+
+
+def _source_label(value: str | None) -> str:
+    return SOURCE_LABELS.get((value or "").strip(), value or "—")
+
+
+def _format_digest_message(
+    *,
+    title: str,
+    target_date: str,
+    bookings: list[tuple],
+) -> str:
+    lines = [
+        f"📋 <b>{title}</b>",
+        f"<b>Дата:</b> {target_date}",
+        f"<b>Записей:</b> {len(bookings)}",
+        "",
+    ]
+
+    for index, (name, phone, _date, time, price, service_name, source, notes, created_by_admin) in enumerate(bookings[:7], start=1):
+        source_text = _source_label(source)
+        origin_text = " · внесена вручную" if int(created_by_admin or 0) else ""
+        service_text = service_name or "Без услуги"
+        line = (
+            f"{index}. {escape(name)} ({escape(service_text)}) — {escape(time)} — "
+            f"{escape(phone)} — {escape(str(price or 0))} — {escape(source_text)}{origin_text}"
+        )
+        lines.append(line)
+        if notes:
+            lines.append(f"   <i>Комментарий: {escape(notes)}</i>")
+
+    if len(bookings) > 7:
+        lines.extend(["", f"<i>И ещё {len(bookings) - 7} записей.</i>"])
+
+    return "\n".join(lines)
+
+
 async def check_reminders(bot: Bot):
     try:
         await sync_completed_bookings()
@@ -57,7 +118,7 @@ async def check_reminders(bot: Bot):
                 continue
             template_1 = salon_config.get(
                 "reminder_1_text",
-                "🔔 <b>Здравствуйте, {name}!</b>\n\nНапоминаем, что вы записаны к нам на завтра <b>({date})</b> в <b>{time}</b>.\nЖдем вас! ✨",
+                "🔔 <b>Здравствуйте, {name}!</b>\n\nНапоминаем, что вы записаны к нам на завтра <b>({date})</b> в <b>{time}</b>.\nЖдём вас! ✨",
             )
             msg = format_reminder(template_1, name, date_str, time_str)
             try:
@@ -92,38 +153,49 @@ async def send_admin_daily_digest(bot: Bot) -> None:
         return
 
     salon_now = get_salon_now()
-    
-    digest_hour_raw = salon_config.get("admin_digest_hour")
-    if digest_hour_raw is not None:
-        try:
-            digest_hour = int(digest_hour_raw)
-        except ValueError:
-            digest_hour = 9
-    else:
-        import re
-        working_hours = str(salon_config.get("working_hours", "10:00-20:00") or "")
-        match = re.search(r"(\d{1,2}):\d{2}", working_hours)
-        digest_hour = int(match.group(1)) if match else 9
-
+    digest_hour = _get_digest_hour("admin_digest_hour", _get_default_digest_hour())
     today_key = salon_now.date().isoformat()
     if salon_now.hour < digest_hour or get_runtime_value("last_admin_digest_date") == today_key:
         return
 
     today_str = salon_now.strftime("%d.%m.%Y")
     bookings = await get_bookings_by_date_full(today_str)
+    set_runtime_value("last_admin_digest_date", today_key)
     if not bookings:
-        set_runtime_value("last_admin_digest_date", today_key)
         return
 
-    lines = [f"📋 <b>Сводка на сегодня</b>", f"<b>Дата:</b> {today_str}", f"<b>Записей:</b> {len(bookings)}", ""]
-    for index, (name, phone, _date, time, price) in enumerate(bookings[:5], start=1):
-        lines.append(f"{index}. {escape(name)} — {escape(time)} — {escape(phone)} — {escape(str(price or 0))}")
-    if len(bookings) > 5:
-        lines.append("")
-        lines.append(f"<i>И ещё {len(bookings) - 5} записей.</i>")
+    message = _format_digest_message(
+        title="Сводка на сегодня",
+        target_date=today_str,
+        bookings=bookings,
+    )
+    await bot.send_message(admin_target, message, parse_mode="HTML")
 
-    await bot.send_message(admin_target, "\n".join(lines), parse_mode="HTML")
-    set_runtime_value("last_admin_digest_date", today_key)
+
+async def send_admin_tomorrow_digest(bot: Bot) -> None:
+    admin_target = os.getenv("ADMIN_ID") or salon_config.get("admin_id") or None
+    if not admin_target:
+        return
+
+    salon_now = get_salon_now()
+    digest_hour = _get_digest_hour("admin_tomorrow_digest_hour", 20)
+    tomorrow = salon_now.date() + timedelta(days=1)
+    tomorrow_key = tomorrow.isoformat()
+    if salon_now.hour < digest_hour or get_runtime_value("last_admin_tomorrow_digest_date") == tomorrow_key:
+        return
+
+    tomorrow_str = tomorrow.strftime("%d.%m.%Y")
+    bookings = await get_bookings_by_date_full(tomorrow_str)
+    set_runtime_value("last_admin_tomorrow_digest_date", tomorrow_key)
+    if not bookings:
+        return
+
+    message = _format_digest_message(
+        title="Сводка на завтра",
+        target_date=tomorrow_str,
+        bookings=bookings,
+    )
+    await bot.send_message(admin_target, message, parse_mode="HTML")
 
 
 async def run_maintenance(bot: Bot) -> None:
@@ -135,6 +207,11 @@ async def run_maintenance(bot: Bot) -> None:
         await send_admin_daily_digest(bot)
     except Exception as exc:
         logger.error("Failed to send admin daily digest: %s", exc)
+
+    try:
+        await send_admin_tomorrow_digest(bot)
+    except Exception as exc:
+        logger.error("Failed to send admin tomorrow digest: %s", exc)
 
 
 async def start_scheduler(bot: Bot):
