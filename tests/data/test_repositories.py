@@ -36,6 +36,7 @@ from repositories.categories import (
     get_all_categories,
     update_category_parent,
 )
+from repositories.services import add_service, get_all_services
 from repositories.schema import init_db
 from tests.support import RepositoryTestCase
 
@@ -504,6 +505,16 @@ class CategoryRepositoryTests(RepositoryTestCase):
 
         self.assertNotIn(2, by_id)
         self.assertEqual(by_id[3]["parent_id"], 1)
+
+
+class ServiceRepositoryTests(RepositoryTestCase):
+    async def test_get_all_services_returns_numeric_price_value(self):
+        await add_service("Test Service", "8 000", duration=30)
+
+        services = await get_all_services()
+
+        self.assertEqual(len(services), 1)
+        self.assertEqual(services[0]["price_value"], 8000)
 
 
 class SchemaMigrationTests(unittest.IsolatedAsyncioTestCase):

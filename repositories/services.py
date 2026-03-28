@@ -4,6 +4,11 @@ import re
 
 from .base import db_connect
 
+
+def _parse_price_value(price) -> int:
+    price_digits = re.sub(r"\D", "", str(price or ""))
+    return int(price_digits) if price_digits else 0
+
 async def add_service(name: str, price: str, duration: int = 60, description: str = "", category_id: int | None = None):
     async with db_connect() as db:
         await db.execute("INSERT INTO services (name, price, duration, description, category_id) VALUES (?, ?, ?, ?, ?)", (name, price, duration, description, category_id))
@@ -34,7 +39,16 @@ async def get_service_by_id(service_id: int):
         """, (service_id,)) as cursor:
             r = await cursor.fetchone()
             if r:
-                return {"id": r[0], "name": r[1], "price": r[2], "duration": r[3], "description": r[4], "category_id": r[5], "category_name": r[6]}
+                return {
+                    "id": r[0],
+                    "name": r[1],
+                    "price": r[2],
+                    "price_value": _parse_price_value(r[2]),
+                    "duration": r[3],
+                    "description": r[4],
+                    "category_id": r[5],
+                    "category_name": r[6],
+                }
             return None
 
 async def get_service_by_name(service_name: str):
@@ -52,8 +66,7 @@ async def get_service_by_name(service_name: str):
         return None
 
     price_text = row[2] or ""
-    price_digits = re.sub(r"\D", "", str(price_text))
-    price_value = int(price_digits) if price_digits else 0
+    price_value = _parse_price_value(price_text)
 
     return {
         "id": row[0],
@@ -74,7 +87,19 @@ async def get_all_services():
             LEFT JOIN categories c ON s.category_id = c.id
         """) as cursor:
             rows = await cursor.fetchall()
-            return [{"id": r[0], "name": r[1], "price": r[2], "duration": r[3], "description": r[4], "category_id": r[5], "category_name": r[6]} for r in rows]
+            return [
+                {
+                    "id": r[0],
+                    "name": r[1],
+                    "price": r[2],
+                    "price_value": _parse_price_value(r[2]),
+                    "duration": r[3],
+                    "description": r[4],
+                    "category_id": r[5],
+                    "category_name": r[6],
+                }
+                for r in rows
+            ]
 
 async def delete_service(service_id: int):
     async with db_connect() as db:
