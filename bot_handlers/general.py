@@ -1139,12 +1139,13 @@ async def manual_booking_confirm_callback(callback: types.CallbackQuery, state):
     await _notify_client_about_admin_booking_action(
         callback.bot,
         user_id=linked_user_id,
-        title="📅 <b>Для вас оформили запись</b>",
+        title="📅 <b>Запись оформлена</b>",
         lines=[
             f"<b>Услуга:</b> {escape(service['name'])}",
             f"<b>Дата:</b> {escape(data['date'])}",
             f"<b>Время:</b> {escape(data['time'])}",
             f"<b>Телефон:</b> {escape(data.get('phone') or '—')}",
+            "Ждём вас в выбранное время.",
         ],
     )
 
@@ -1414,7 +1415,7 @@ async def admin_booking_status_callback(callback: types.CallbackQuery):
                 f"<b>Услуга:</b> {escape(service_name or '—')}",
                 f"<b>Дата:</b> {escape(date)}",
                 f"<b>Время:</b> {escape(time)}",
-                "Если нужно, вы можете записаться заново.",
+                "Если захотите, можно записаться снова.",
             ],
         )
     await callback.answer("Статус обновлен")
@@ -1834,7 +1835,7 @@ async def admin_booking_status_callback_v2(callback: types.CallbackQuery):
                 f"<b>Услуга:</b> {escape(service_name or '—')}",
                 f"<b>Дата:</b> {escape(date)}",
                 f"<b>Время:</b> {escape(time)}",
-                "Если нужно, вы можете записаться заново.",
+                "Если захотите, можно записаться снова.",
             ],
         )
     await _show_booking_list(
@@ -2233,10 +2234,12 @@ async def admin_booking_reschedule_confirm_callback(callback: types.CallbackQuer
     await _notify_client_about_admin_booking_action(
         callback.bot,
         user_id=data.get("booking_user_id"),
-        title="🔁 <b>Вашу запись перенесли</b>",
+        title="🔁 <b>Запись перенесена</b>",
         lines=[
+            f"<b>Услуга:</b> {escape(data.get('service_name') or '—')}",
             f"<b>Было:</b> {escape(data['current_date'])} в {escape(data['current_time'])}",
             f"<b>Стало:</b> {escape(date_value)} в {escape(time_value)}",
+            "Пожалуйста, сохраните новое время.",
         ],
     )
 
