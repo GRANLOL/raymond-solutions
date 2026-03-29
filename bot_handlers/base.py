@@ -10,7 +10,7 @@ import database
 import keyboards
 import pandas as pd
 from aiogram import F, Router, types
-from aiogram.filters import Command
+from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 from aiogram.types import FSInputFile
 

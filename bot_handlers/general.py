@@ -10,12 +10,14 @@ from openpyxl import Workbook
 from openpyxl.cell.cell import MergedCell
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
+from booking_service import consume_booking_start_payload
 from booking_validation import normalize_phone, parse_working_hours, slot_overlaps
 from time_utils import get_salon_now
 from .states import AdminAvailabilityForm, AdminBookingsByDateForm, AdminEditBookingForm, AdminRescheduleBookingForm, ManualBookingForm, SearchBookingForm
 
 from .base import (
     Command,
+    CommandObject,
     F,
     FSInputFile,
     Router,
@@ -546,7 +548,7 @@ async def send_client_home(message: types.Message, *, text: str, is_admin: bool)
 
 
 @router.message(Command("start"))
-async def start_handler(message: types.Message, state=None):
+async def start_handler(message: types.Message, command: CommandObject | None = None, state=None):
     admin_id = getenv("ADMIN_ID")
     is_admin = bool(admin_id and str(message.from_user.id) == admin_id)
     if state is not None:
@@ -559,6 +561,30 @@ async def start_handler(message: types.Message, state=None):
             reply_markup=keyboards.admin_menu,
         )
         return
+
+    payload = (command.args or "").strip() if command else ""
+    if payload.startswith("booking_"):
+        booking_id = consume_booking_start_payload(payload, user_id=message.from_user.id)
+        if booking_id:
+            booking = await database.get_booking_admin_details(int(booking_id))
+            if booking:
+                if len(booking) == 13:
+                    _booking_id, user_id, name, phone, date, time, status, duration, service_name, price, source, notes, created_by_admin = booking
+                    created_at = None
+                else:
+                    _booking_id, user_id, name, phone, date, time, status, duration, service_name, price, source, notes, created_by_admin, created_at = booking
+                if int(user_id or 0) == int(message.from_user.id):
+                    await message.answer(
+                        (
+                            "📅 <b>Запись оформлена</b>\n\n"
+                            f"<b>Услуга:</b> {escape(service_name or '—')}\n"
+                            f"<b>Дата:</b> {escape(date)}\n"
+                            f"<b>Время:</b> {escape(time)}\n"
+                            f"<b>Телефон:</b> {escape(phone or '—')}\n"
+                            "Ждём вас в выбранное время."
+                        ),
+                        parse_mode="HTML",
+                    )
 
     welcome_text = salon_config.get("welcome_text", "Привет! Выберите нужное действие:")
     await send_client_home(message, text=welcome_text, is_admin=is_admin)

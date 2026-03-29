@@ -54,6 +54,7 @@ export const config = {
     salonLogoUrl: "https://granlol.github.io/raymond-solutions/assets/logos/testlogo.png",
     salonLogoText: "",
     salonTagline: "онлайн запись",
+    botUsername: "",
 
     apiBaseUrl: resolveApiBaseUrl(),
 

@@ -93,6 +93,9 @@ export async function fetchContent() {
                     config.salonLogoText = "";
                 }
             }
+            if (data.bot_username !== undefined) {
+                config.botUsername = data.bot_username || "";
+            }
         }
     } catch (e) {
         console.error("Error fetching available content:", e);

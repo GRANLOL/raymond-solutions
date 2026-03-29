@@ -37,6 +37,22 @@ async function postBooking(data) {
     return payload;
 }
 
+function openBotViaDeepLink(startPayload) {
+    const username = (config.botUsername || '').trim().replace(/^@/, '');
+    if (!username || !startPayload) {
+        return false;
+    }
+
+    const url = `https://t.me/${username}?start=${encodeURIComponent(startPayload)}`;
+    if (typeof tg.openTelegramLink === 'function') {
+        tg.openTelegramLink(url);
+        return true;
+    }
+
+    window.location.href = url;
+    return true;
+}
+
 export async function submitData() {
     if (tg.HapticFeedback) {
         tg.HapticFeedback.impactOccurred('medium');
@@ -58,6 +74,9 @@ export async function submitData() {
     const successService = document.getElementById('success-service');
     const successDate = document.getElementById('success-date');
     const successTime = document.getElementById('success-time');
+    const successFollowup = document.getElementById('success-followup');
+    const successOpenBot = document.getElementById('success-open-bot');
+    const successClose = document.getElementById('success-close');
     const phoneInput = document.getElementById('phone-input');
     const nameInput = document.getElementById('name-input');
 
@@ -76,7 +95,7 @@ export async function submitData() {
     };
 
     try {
-        await postBooking(data);
+        const payload = await postBooking(data);
         persistPhone(phoneInput.value);
 
         modal.classList.remove('active');
@@ -99,11 +118,32 @@ export async function submitData() {
             });
         });
 
-        setTimeout(() => {
-            if (tg.close) {
-                tg.close();
-            }
-        }, 1800);
+        const shouldKeepOpen = payload && payload.client_notified === false && payload.start_payload && config.botUsername;
+        if (successFollowup) {
+            successFollowup.hidden = !shouldKeepOpen;
+        }
+
+        if (successOpenBot) {
+            successOpenBot.onclick = () => {
+                openBotViaDeepLink(payload?.start_payload);
+            };
+        }
+
+        if (successClose) {
+            successClose.onclick = () => {
+                if (tg.close) {
+                    tg.close();
+                }
+            };
+        }
+
+        if (!shouldKeepOpen) {
+            setTimeout(() => {
+                if (tg.close) {
+                    tg.close();
+                }
+            }, 1800);
+        }
     } catch (error) {
         console.error('Booking submit failed:', error);
         if (tg.HapticFeedback) {

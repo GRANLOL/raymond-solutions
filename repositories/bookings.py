@@ -167,7 +167,7 @@ async def add_booking(
     booking_dt = _booking_datetime(date, time)
     schedule = build_reminder_schedule(booking_dt)
     async with db_connect() as db:
-        await db.execute(
+        cursor = await db.execute(
             """
             INSERT INTO bookings (
                 user_id, name, phone, date, date_iso, time, duration, service_name, price,
@@ -181,6 +181,7 @@ async def add_booking(
             ),
         )
         await db.commit()
+        return cursor.lastrowid
 
 
 async def create_booking_if_available(
@@ -240,7 +241,7 @@ async def create_booking_if_available(
 
         booking_dt = _booking_datetime(date, time)
         schedule = build_reminder_schedule(booking_dt)
-        await db.execute(
+        cursor = await db.execute(
             """
             INSERT INTO bookings (
                 user_id, name, phone, date, date_iso, time, duration, service_name, price,
@@ -254,7 +255,7 @@ async def create_booking_if_available(
             ),
         )
         await db.commit()
-        return True
+        return cursor.lastrowid
 
 
 async def create_manual_booking(

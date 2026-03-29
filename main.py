@@ -117,6 +117,7 @@ async def get_content(request: Request, x_telegram_init_data: str | None = Heade
         "webapp_logo_type": webapp_logo_type,
         "webapp_logo_url": webapp_logo_url,
         "webapp_logo_text": webapp_logo_text,
+        "bot_username": getattr(request.app.state, "bot_username", "") or "",
     }
 
 
@@ -135,7 +136,7 @@ async def create_booking(payload: dict, x_telegram_init_data: str | None = Heade
     if error_text:
         raise HTTPException(status_code=400, detail=error_text)
 
-    success, message = await create_booking_and_notify(
+    success, message, meta = await create_booking_and_notify(
         bot=app.state.bot,
         user_id=int(user["id"]),
         user_full_name=user.get("first_name") or user.get("username") or "Telegram user",
@@ -149,12 +150,14 @@ async def create_booking(payload: dict, x_telegram_init_data: str | None = Heade
     )
     if not success:
         raise HTTPException(status_code=409, detail=message)
-    return {"ok": True, "message": message}
+    return {"ok": True, "message": message, **meta}
 
 
 async def main():
     bot = Bot(token=BOT_TOKEN)
     app.state.bot = bot
+    me = await bot.get_me()
+    app.state.bot_username = me.username or ""
     dp = Dispatcher()
     dp.include_router(router)
 

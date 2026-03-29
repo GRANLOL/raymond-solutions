@@ -1,5 +1,6 @@
 from html import escape
 import logging
+import secrets
 from os import getenv
 
 from aiogram import types
@@ -7,8 +8,46 @@ from aiogram import types
 from config import salon_config
 import database
 import keyboards
+from runtime_state import get_runtime_value, set_runtime_value
 
 logger = logging.getLogger(__name__)
+
+
+def _store_pending_start_notification(*, token: str, booking_id: int, user_id: int) -> None:
+    payload = get_runtime_value("pending_start_notifications", {}) or {}
+    payload[token] = {
+        "booking_id": int(booking_id),
+        "user_id": int(user_id),
+    }
+    set_runtime_value("pending_start_notifications", payload)
+
+
+def build_booking_start_payload(*, booking_id: int, user_id: int) -> str:
+    token = secrets.token_urlsafe(8)
+    _store_pending_start_notification(token=token, booking_id=booking_id, user_id=user_id)
+    return f"booking_{token}"
+
+
+def consume_booking_start_payload(payload: str, *, user_id: int) -> int | None:
+    if not payload.startswith("booking_"):
+        return None
+
+    token = payload.split("booking_", 1)[1].strip()
+    if not token:
+        return None
+
+    stored = get_runtime_value("pending_start_notifications", {}) or {}
+    entry = stored.get(token)
+    if not entry:
+        return None
+
+    if int(entry.get("user_id") or 0) != int(user_id):
+        return None
+
+    booking_id = int(entry.get("booking_id") or 0)
+    stored.pop(token, None)
+    set_runtime_value("pending_start_notifications", stored)
+    return booking_id or None
 
 
 def get_booking_status_label(status: str) -> str:
@@ -32,7 +71,7 @@ async def create_booking_and_notify(
     phone: str,
     name: str,
     price: int,
-) -> tuple[bool, str]:
+) -> tuple[bool, str, dict]:
     full_name_service = f"{name} ({service})" if name else f"{user_full_name} ({service})"
 
     try:
@@ -51,10 +90,10 @@ async def create_booking_and_notify(
         return False, (
             f"У вас уже {active_limit} активные записи.\n\n"
             "Отмените одну из текущих записей, чтобы оформить новую."
-        )
+        ), {}
 
     if not booking_created:
-        return False, "Этот слот уже занят.\n\nОбновите форму записи и выберите другое время."
+        return False, "Этот слот уже занят.\n\nОбновите форму записи и выберите другое время.", {}
 
     try:
         await database.attach_bookings_to_user_by_phone(phone, user_id)
@@ -83,13 +122,20 @@ async def create_booking_and_notify(
         f"<b>Телефон:</b> {escape(phone)}\n\n"
         "Ждём вас!"
     )
+    client_notified = False
     if bot is not None:
         try:
             await bot.send_message(user_id, success_text, parse_mode="HTML")
+            client_notified = True
         except Exception:
             logger.exception("Failed to send booking confirmation to client", extra={"user_id": user_id})
 
-    return True, success_text
+    meta = {
+        "booking_id": int(booking_created),
+        "client_notified": client_notified,
+        "start_payload": None if client_notified else build_booking_start_payload(booking_id=int(booking_created), user_id=int(user_id)),
+    }
+    return True, success_text, meta
 
 
 async def finalize_web_booking(
@@ -104,7 +150,7 @@ async def finalize_web_booking(
     price: int,
     is_admin: bool,
 ) -> None:
-    success, result_text = await create_booking_and_notify(
+    success, result_text, _meta = await create_booking_and_notify(
         bot=message.bot,
         user_id=message.from_user.id,
         user_full_name=message.from_user.full_name,
