@@ -585,6 +585,7 @@ async def start_handler(message: types.Message, command: CommandObject | None = 
                         ),
                         parse_mode="HTML",
                     )
+                    return
 
     welcome_text = salon_config.get("welcome_text", "Привет! Выберите нужное действие:")
     await send_client_home(message, text=welcome_text, is_admin=is_admin)
