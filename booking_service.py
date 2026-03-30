@@ -62,7 +62,7 @@ def get_booking_status_label(status: str) -> str:
 async def create_booking_and_notify(
     *,
     bot,
-    user_id: int | None,
+    user_id: int,
     user_full_name: str,
     service: str,
     date: str,
@@ -84,7 +84,6 @@ async def create_booking_and_notify(
             duration=duration,
             service_name=service,
             price=price,
-            enforce_active_limit=user_id is not None,
         )
     except database.ActiveBookingLimitReachedError:
         active_limit = max(int(salon_config.get("max_active_bookings_per_user", 3) or 3), 1)
@@ -96,11 +95,10 @@ async def create_booking_and_notify(
     if not booking_created:
         return False, "Этот слот уже занят.\n\nОбновите форму записи и выберите другое время.", {}
 
-    if user_id is not None:
-        try:
-            await database.attach_bookings_to_user_by_phone(phone, user_id)
-        except Exception:
-            logger.exception("Failed to attach bookings to Telegram user by phone", extra={"user_id": user_id})
+    try:
+        await database.attach_bookings_to_user_by_phone(phone, user_id)
+    except Exception:
+        logger.exception("Failed to attach bookings to Telegram user by phone", extra={"user_id": user_id})
 
     admin_text = (
         "🔔 <b>Новая запись</b>\n\n"
@@ -125,7 +123,7 @@ async def create_booking_and_notify(
         "Ждём вас!"
     )
     client_notified = False
-    if bot is not None and user_id is not None:
+    if bot is not None:
         try:
             await bot.send_message(user_id, success_text, parse_mode="HTML")
             client_notified = True
@@ -135,7 +133,7 @@ async def create_booking_and_notify(
     meta = {
         "booking_id": int(booking_created),
         "client_notified": client_notified,
-        "start_payload": None if client_notified or user_id is None else build_booking_start_payload(booking_id=int(booking_created), user_id=int(user_id)),
+        "start_payload": None if client_notified else build_booking_start_payload(booking_id=int(booking_created), user_id=int(user_id)),
     }
     return True, success_text, meta
 

@@ -125,23 +125,21 @@ async def get_content(request: Request, x_telegram_init_data: str | None = Heade
 async def create_booking(payload: dict, x_telegram_init_data: str | None = Header(default=None)) -> dict:
     require_webapp_auth(x_telegram_init_data)
     user = get_user_from_init_data(x_telegram_init_data or "")
-    if WEBAPP_AUTH_REQUIRED and (not user or "id" not in user):
+    if not user or "id" not in user:
         raise HTTPException(status_code=401, detail="Unauthorized")
 
-    resolved_user_id = int(user["id"]) if user and "id" in user else None
-    if resolved_user_id is not None:
-        remaining = get_rate_limit_remaining(f"api_booking:{resolved_user_id}", cooldown_seconds=8)
-        if remaining > 0:
-            raise HTTPException(status_code=429, detail=f"Too many attempts. Retry in {remaining} sec.")
-
+    remaining = get_rate_limit_remaining(f"api_booking:{user['id']}", cooldown_seconds=8)
+    if remaining > 0:
+        raise HTTPException(status_code=429, detail=f"Слишком много попыток. Повторите через {remaining} сек.")
 
     validated, error_text = await validate_web_booking(payload)
     if error_text:
         raise HTTPException(status_code=400, detail=error_text)
+
     success, message, meta = await create_booking_and_notify(
         bot=app.state.bot,
-        user_id=resolved_user_id,
-        user_full_name=(user.get("first_name") or user.get("username") or "Telegram user") if user else "Load test user",
+        user_id=int(user["id"]),
+        user_full_name=user.get("first_name") or user.get("username") or "Telegram user",
         service=validated["service"]["name"],
         date=validated["date"],
         time=validated["time"],
